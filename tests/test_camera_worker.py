@@ -2,6 +2,7 @@ import numpy as np
 
 from app.exercises.exercise_manager import ExerciseManager
 from app.pose.pose_landmarks import Landmark, LandmarkName
+from app.pose.angles import calculate_joint_angles
 from app.ui.main_window import CameraWorker
 
 
@@ -49,5 +50,5 @@ def test_skeleton_overlay_draws_connections() -> None:
 
 
 def test_pose_debug_metrics_include_requested_joint_types() -> None:
-    angles = CameraWorker._joint_angles(up_pose())
-    assert {"Elbow L", "Shoulder L", "Hip L", "Knee L"}.issubset(angles)
+    angles = calculate_joint_angles(up_pose())
+    assert {"Left elbow", "Left shoulder", "Left hip", "Left knee"}.issubset(angles)

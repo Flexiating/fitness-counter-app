@@ -12,8 +12,8 @@ from app.exercises.exercise_manager import ExerciseManager
 from app.pose.pose_detector import PoseDetector
 from app.processing.motion_processor import MotionProcessor
 from app.config.settings import SETTINGS
+from app.pose.angles import JOINT_ANGLE_TRIPLES, calculate_joint_angles
 from app.pose.pose_landmarks import LandmarkName
-from app.pose.pose_utils import calculate_angle
 from app.ui.camera_widget import CameraWidget
 from app.ui.widgets import value_label
 from app.utils.logger import get_logger
@@ -25,6 +25,7 @@ class CameraWorker(QThread):
     """Owns the camera loop; it never schedules or calls itself recursively."""
     frame_ready = Signal(QImage)
     result_ready = Signal(int, str, str)
+    angles_ready = Signal(dict)
     error = Signal(str)
 
     def __init__(self, exercise_manager: ExerciseManager) -> None:
@@ -57,14 +58,17 @@ class CameraWorker(QThread):
                     image = QImage(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB).data, frame.shape[1], frame.shape[0], frame.strides[0], QImage.Format.Format_RGB888).copy()
                     self.frame_ready.emit(image)
                     self.result_ready.emit(self.manager.repetitions(), "NO PERSON", "No person detected")
+                    self.angles_ready.emit({})
                     self._sleep_to_target(frame_started_at)
                     continue
                 landmarks = processor.process(detected)
                 result = self.manager.process(landmarks)
-                self._draw(frame, landmarks, self._joint_angles(landmarks), person_detected=True, fps=fps)
+                angles = calculate_joint_angles(landmarks)
+                self._draw(frame, landmarks, angles, person_detected=True, fps=fps)
                 image = QImage(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB).data, frame.shape[1], frame.shape[0], frame.strides[0], QImage.Format.Format_RGB888).copy()
                 self.frame_ready.emit(image)
                 self.result_ready.emit(result.repetitions, result.state, result.status)
+                self.angles_ready.emit(angles)
                 self._sleep_to_target(frame_started_at)
         except Exception as exc:
             log.exception("Camera worker failed")
@@ -86,21 +90,6 @@ class CameraWorker(QThread):
             self._fps = instantaneous if self._fps == 0 else (0.2 * instantaneous + 0.8 * self._fps)
         self._last_frame_at = now
         return self._fps
-
-    @staticmethod
-    def _joint_angles(landmarks) -> dict[str, float]:
-        triples = {
-            "Elbow L": (LandmarkName.LEFT_SHOULDER, LandmarkName.LEFT_ELBOW, LandmarkName.LEFT_WRIST),
-            "Elbow R": (LandmarkName.RIGHT_SHOULDER, LandmarkName.RIGHT_ELBOW, LandmarkName.RIGHT_WRIST),
-            "Shoulder L": (LandmarkName.LEFT_ELBOW, LandmarkName.LEFT_SHOULDER, LandmarkName.LEFT_HIP),
-            "Shoulder R": (LandmarkName.RIGHT_ELBOW, LandmarkName.RIGHT_SHOULDER, LandmarkName.RIGHT_HIP),
-            "Hip L": (LandmarkName.LEFT_SHOULDER, LandmarkName.LEFT_HIP, LandmarkName.LEFT_KNEE),
-            "Hip R": (LandmarkName.RIGHT_SHOULDER, LandmarkName.RIGHT_HIP, LandmarkName.RIGHT_KNEE),
-            "Knee L": (LandmarkName.LEFT_HIP, LandmarkName.LEFT_KNEE, LandmarkName.LEFT_ANKLE),
-            "Knee R": (LandmarkName.RIGHT_HIP, LandmarkName.RIGHT_KNEE, LandmarkName.RIGHT_ANKLE),
-        }
-        return {name: calculate_angle(*(landmarks[point] for point in points))
-                for name, points in triples.items() if all(point in landmarks for point in points)}
 
     def _draw(self, frame, landmarks, angles, person_detected: bool = True, fps: float = 0.0) -> None:
         height, width = frame.shape[:2]
@@ -125,9 +114,12 @@ class CameraWorker(QThread):
             f"FPS: {fps:.1f}",
             f"Confidence: {confidence:.0%}",
         ]
-        lines.extend(f"{name}: {value:.0f}°" for name, value in angles.items())
         for index, text in enumerate(lines):
             cv2.putText(frame, text, (16, 30 + index * 24), cv2.FONT_HERSHEY_SIMPLEX, 0.58, (255, 255, 255), 2)
+        for name, value in angles.items():
+            _, joint, _ = JOINT_ANGLE_TRIPLES[name]
+            point = landmarks[joint]
+            cv2.putText(frame, f"{value:.0f}°", (int(point.x * width) + 6, int(point.y * height) - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (253, 224, 71), 2)
 
     def stop(self) -> None:
         self.requestInterruption()
@@ -156,6 +148,10 @@ class MainWindow(QMainWindow):
         layout.addLayout(controls)
         self.person = value_label("Person: not detected", 16); layout.addWidget(self.person)
         self.state = value_label("State: Initializing...", 18); layout.addWidget(self.state)
+        self.angle_debug = QLabel("Joint angles: waiting for pose")
+        self.angle_debug.setWordWrap(True)
+        self.angle_debug.setStyleSheet("padding:8px; background:#1e293b; color:#e2e8f0; border-radius:6px;")
+        layout.addWidget(self.angle_debug)
         buttons = QHBoxLayout(); self.start_button = QPushButton("Start"); self.start_button.clicked.connect(self.start)
         self.stop_button = QPushButton("Stop Camera"); self.stop_button.setEnabled(False); self.stop_button.clicked.connect(self.stop_camera)
         reset = QPushButton("Reset"); reset.clicked.connect(self.reset)
@@ -170,6 +166,7 @@ class MainWindow(QMainWindow):
         self.worker = CameraWorker(self.manager)
         self._retired_workers.append(self.worker)
         self.worker.frame_ready.connect(self.camera_view.set_frame); self.worker.result_ready.connect(self.update_result)
+        self.worker.angles_ready.connect(self.update_angles)
         self.worker.error.connect(self.show_error); self.worker.finished.connect(self._on_worker_finished)
         self.worker.start()
 
@@ -192,6 +189,14 @@ class MainWindow(QMainWindow):
     def update_result(self, repetitions: int, state: str, status: str) -> None:
         self.reps.setText(str(repetitions)); self.state.setText(f"State: {state} — {status}")
         self.person.setText("Person: not detected" if state == "NO PERSON" else "Person: detected")
+
+    @Slot(dict)
+    def update_angles(self, angles: dict) -> None:
+        if not angles:
+            self.angle_debug.setText("Joint angles: no pose detected")
+            return
+        values = "   ".join(f"{name}: {value:.0f}°" for name, value in angles.items())
+        self.angle_debug.setText(f"Joint angles\n{values}")
 
     @Slot()
     def reset(self) -> None:

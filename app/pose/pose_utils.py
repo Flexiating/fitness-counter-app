@@ -1,20 +1,8 @@
 from collections import deque
-from math import acos, degrees
 from typing import Iterable
 
+from app.pose.angles import angle as calculate_angle
 from app.pose.pose_landmarks import Landmark, LandmarkName, PoseLandmarks
-
-
-def calculate_angle(a: Landmark, b: Landmark, c: Landmark) -> float:
-    """Return angle ABC in degrees; B is the joint."""
-    ab = (a.x - b.x, a.y - b.y)
-    cb = (c.x - b.x, c.y - b.y)
-    mag_ab = (ab[0] ** 2 + ab[1] ** 2) ** 0.5
-    mag_cb = (cb[0] ** 2 + cb[1] ** 2) ** 0.5
-    if mag_ab == 0 or mag_cb == 0:
-        return 0.0
-    cosine = max(-1.0, min(1.0, (ab[0] * cb[0] + ab[1] * cb[1]) / (mag_ab * mag_cb)))
-    return degrees(acos(cosine))
 
 
 def landmarks_visible(landmarks: PoseLandmarks, required: Iterable[LandmarkName], minimum: float) -> bool:
