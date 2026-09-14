@@ -26,6 +26,7 @@ class CameraWorker(QThread):
     frame_ready = Signal(QImage)
     result_ready = Signal(int, str, str)
     angles_ready = Signal(dict)
+    exercise_debug_ready = Signal(str)
     error = Signal(str)
 
     def __init__(self, exercise_manager: ExerciseManager) -> None:
@@ -59,6 +60,7 @@ class CameraWorker(QThread):
                     self.frame_ready.emit(image)
                     self.result_ready.emit(self.manager.repetitions(), "NO PERSON", "No person detected")
                     self.angles_ready.emit({})
+                    self.exercise_debug_ready.emit("")
                     self._sleep_to_target(frame_started_at)
                     continue
                 landmarks = processor.process(detected)
@@ -69,6 +71,7 @@ class CameraWorker(QThread):
                 self.frame_ready.emit(image)
                 self.result_ready.emit(result.repetitions, result.state, result.status)
                 self.angles_ready.emit(angles)
+                self.exercise_debug_ready.emit(result.debug)
                 self._sleep_to_target(frame_started_at)
         except Exception as exc:
             log.exception("Camera worker failed")
@@ -117,6 +120,8 @@ class CameraWorker(QThread):
         for index, text in enumerate(lines):
             cv2.putText(frame, text, (16, 30 + index * 24), cv2.FONT_HERSHEY_SIMPLEX, 0.58, (255, 255, 255), 2)
         for name, value in angles.items():
+            if name not in JOINT_ANGLE_TRIPLES:
+                continue
             _, joint, _ = JOINT_ANGLE_TRIPLES[name]
             point = landmarks[joint]
             cv2.putText(frame, f"{value:.0f}°", (int(point.x * width) + 6, int(point.y * height) - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (253, 224, 71), 2)
@@ -144,7 +149,7 @@ class MainWindow(QMainWindow):
         self.selector = QComboBox()
         for key, name in self.manager.names.items(): self.selector.addItem(name, key)
         self.selector.currentIndexChanged.connect(self._change_exercise); controls.addWidget(self.selector)
-        controls.addStretch(); controls.addWidget(QLabel("Repetitions:")); self.reps = value_label("0", 34); controls.addWidget(self.reps)
+        controls.addStretch(); self.count_caption = QLabel("Push-ups:"); controls.addWidget(self.count_caption); self.reps = value_label("0", 34); controls.addWidget(self.reps)
         layout.addLayout(controls)
         self.person = value_label("Person: not detected", 16); layout.addWidget(self.person)
         self.state = value_label("State: Initializing...", 18); layout.addWidget(self.state)
@@ -152,6 +157,10 @@ class MainWindow(QMainWindow):
         self.angle_debug.setWordWrap(True)
         self.angle_debug.setStyleSheet("padding:8px; background:#1e293b; color:#e2e8f0; border-radius:6px;")
         layout.addWidget(self.angle_debug)
+        self.exercise_debug = QLabel("Push-up debug: waiting for pose")
+        self.exercise_debug.setWordWrap(True)
+        self.exercise_debug.setStyleSheet("padding:8px; background:#172554; color:#dbeafe; border-radius:6px;")
+        layout.addWidget(self.exercise_debug)
         buttons = QHBoxLayout(); self.start_button = QPushButton("Start"); self.start_button.clicked.connect(self.start)
         self.stop_button = QPushButton("Stop Camera"); self.stop_button.setEnabled(False); self.stop_button.clicked.connect(self.stop_camera)
         reset = QPushButton("Reset"); reset.clicked.connect(self.reset)
@@ -167,6 +176,7 @@ class MainWindow(QMainWindow):
         self._retired_workers.append(self.worker)
         self.worker.frame_ready.connect(self.camera_view.set_frame); self.worker.result_ready.connect(self.update_result)
         self.worker.angles_ready.connect(self.update_angles)
+        self.worker.exercise_debug_ready.connect(self.update_exercise_debug)
         self.worker.error.connect(self.show_error); self.worker.finished.connect(self._on_worker_finished)
         self.worker.start()
 
@@ -198,6 +208,10 @@ class MainWindow(QMainWindow):
         values = "   ".join(f"{name}: {value:.0f}°" for name, value in angles.items())
         self.angle_debug.setText(f"Joint angles\n{values}")
 
+    @Slot(str)
+    def update_exercise_debug(self, debug: str) -> None:
+        self.exercise_debug.setText(debug or "Push-up debug: no pose detected")
+
     @Slot()
     def reset(self) -> None:
         self.manager.reset(); self.reps.setText("0"); self.state.setText("State: Ready")
@@ -205,6 +219,7 @@ class MainWindow(QMainWindow):
     @Slot(int)
     def _change_exercise(self, _index: int) -> None:
         self.manager.select(str(self.selector.currentData())); self.reset()
+        self.count_caption.setText("Push-ups:" if self.selector.currentData() == "push_up" else f"{self.manager.selected.name}s:")
 
     @Slot(str)
     def show_error(self, message: str) -> None:

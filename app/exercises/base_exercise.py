@@ -10,6 +10,7 @@ class ExerciseResult:
     state: str
     status: str
     angles: dict[str, float]
+    debug: str = ""
 
 
 class BaseExercise(ABC):

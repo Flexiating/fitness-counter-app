@@ -10,9 +10,9 @@ def up_pose():
     return {
         LandmarkName.LEFT_SHOULDER: Landmark(.2, .5), LandmarkName.LEFT_ELBOW: Landmark(.5, .5), LandmarkName.LEFT_WRIST: Landmark(.8, .5),
         LandmarkName.RIGHT_SHOULDER: Landmark(.2, .6), LandmarkName.RIGHT_ELBOW: Landmark(.5, .6), LandmarkName.RIGHT_WRIST: Landmark(.8, .6),
-        LandmarkName.LEFT_HIP: Landmark(.3, .75), LandmarkName.RIGHT_HIP: Landmark(.3, .8),
-        LandmarkName.LEFT_KNEE: Landmark(.4, .9), LandmarkName.RIGHT_KNEE: Landmark(.4, .9),
-        LandmarkName.LEFT_ANKLE: Landmark(.45, .98), LandmarkName.RIGHT_ANKLE: Landmark(.45, .98),
+        LandmarkName.LEFT_HIP: Landmark(.5, .5), LandmarkName.RIGHT_HIP: Landmark(.5, .6),
+        LandmarkName.LEFT_KNEE: Landmark(.8, .5), LandmarkName.RIGHT_KNEE: Landmark(.8, .6),
+        LandmarkName.LEFT_ANKLE: Landmark(.9, .5), LandmarkName.RIGHT_ANKLE: Landmark(.9, .6),
     }
 
 
