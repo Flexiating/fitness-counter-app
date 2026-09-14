@@ -11,11 +11,18 @@ from app.pose.pose_landmarks import Landmark, LandmarkName, PoseLandmarks
 class MediaPipePoseModel(PoseModel):
     """Adapter that shields the rest of the application from MediaPipe APIs."""
     _mapping = {
-        LandmarkName.NOSE: 0, LandmarkName.LEFT_SHOULDER: 11, LandmarkName.RIGHT_SHOULDER: 12,
+        LandmarkName.NOSE: 0, LandmarkName.LEFT_EYE_INNER: 1, LandmarkName.LEFT_EYE: 2,
+        LandmarkName.LEFT_EYE_OUTER: 3, LandmarkName.RIGHT_EYE_INNER: 4, LandmarkName.RIGHT_EYE: 5,
+        LandmarkName.RIGHT_EYE_OUTER: 6, LandmarkName.LEFT_EAR: 7, LandmarkName.RIGHT_EAR: 8,
+        LandmarkName.MOUTH_LEFT: 9, LandmarkName.MOUTH_RIGHT: 10,
+        LandmarkName.LEFT_SHOULDER: 11, LandmarkName.RIGHT_SHOULDER: 12,
         LandmarkName.LEFT_ELBOW: 13, LandmarkName.RIGHT_ELBOW: 14, LandmarkName.LEFT_WRIST: 15,
-        LandmarkName.RIGHT_WRIST: 16, LandmarkName.LEFT_HIP: 23, LandmarkName.RIGHT_HIP: 24,
+        LandmarkName.RIGHT_WRIST: 16, LandmarkName.LEFT_PINKY: 17, LandmarkName.RIGHT_PINKY: 18,
+        LandmarkName.LEFT_INDEX: 19, LandmarkName.RIGHT_INDEX: 20, LandmarkName.LEFT_THUMB: 21,
+        LandmarkName.RIGHT_THUMB: 22, LandmarkName.LEFT_HIP: 23, LandmarkName.RIGHT_HIP: 24,
         LandmarkName.LEFT_KNEE: 25, LandmarkName.RIGHT_KNEE: 26, LandmarkName.LEFT_ANKLE: 27,
-        LandmarkName.RIGHT_ANKLE: 28,
+        LandmarkName.RIGHT_ANKLE: 28, LandmarkName.LEFT_HEEL: 29, LandmarkName.RIGHT_HEEL: 30,
+        LandmarkName.LEFT_FOOT_INDEX: 31, LandmarkName.RIGHT_FOOT_INDEX: 32,
     }
 
     def __init__(self) -> None:

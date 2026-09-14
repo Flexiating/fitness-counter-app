@@ -23,15 +23,13 @@ def test_camera_worker_reports_no_person_and_processes_pose(monkeypatch) -> None
         def read(self): return frames.pop(0) if frames else None
         def release(self): pass
 
-    class FakeModel:
-        def predict(self, _frame): return {} if len(frames) == 1 else up_pose()
-
-    class FakeModelManager:
-        def start(self): return FakeModel()
+    class FakePoseDetector:
+        def start(self): pass
+        def detect(self, _frame): return {} if len(frames) == 1 else up_pose()
         def close(self): pass
 
     monkeypatch.setattr("app.ui.main_window.Camera", FakeCamera)
-    monkeypatch.setattr("app.ui.main_window.ModelManager", FakeModelManager)
+    monkeypatch.setattr("app.ui.main_window.PoseDetector", FakePoseDetector)
     worker = CameraWorker(ExerciseManager())
     statuses, images = [], []
     worker.result_ready.connect(lambda _reps, state, status: statuses.append((state, status)))
@@ -48,3 +46,8 @@ def test_skeleton_overlay_draws_connections() -> None:
     frame = np.zeros((100, 100, 3), dtype=np.uint8)
     worker._draw(frame, up_pose(), {})
     assert frame.sum() > 0
+
+
+def test_pose_debug_metrics_include_requested_joint_types() -> None:
+    angles = CameraWorker._joint_angles(up_pose())
+    assert {"Elbow L", "Shoulder L", "Hip L", "Knee L"}.issubset(angles)
