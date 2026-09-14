@@ -1,0 +1,1 @@
+"""Fitness Counter desktop application."""
