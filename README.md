@@ -20,6 +20,9 @@ A desktop Python app for macOS and Windows that uses a webcam and pose estimatio
 
 ## Run on macOS
 
+If Python 3.12 is not installed, first use
+[`set_up_mac/install_python_312.command`](set_up_mac/install_python_312.command).
+
 In Terminal from this folder:
 
 ```bash
@@ -30,6 +33,9 @@ chmod +x run_mac.sh
 The script automatically selects Python 3.12, 3.11, 3.10, or 3.9, creates a matching private environment, installs dependencies, and starts the app. If none is installed, download Python 3.12 from [python.org](https://www.python.org/downloads/), then run the script again. If the camera is unavailable, allow your terminal/Python app in **System Settings → Privacy & Security → Camera**, then restart it.
 
 ## Run on Windows
+
+If Python 3.12 is not installed, first double-click
+[`set_up_win/install_python_312.bat`](set_up_win/install_python_312.bat).
 
 Double-click `run_windows.bat`, or run it from Command Prompt. It automatically selects a compatible Python version, creates a private environment, installs the packages, and starts the app. Grant camera permission if Windows asks.
 
