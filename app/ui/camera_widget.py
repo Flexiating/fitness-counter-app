@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QLabel
 
 class CameraWidget(QLabel):
     def __init__(self) -> None:
-        super().__init__("Camera preview will appear here")
+        super().__init__("Hình ảnh camera sẽ hiển thị ở đây")
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setMinimumSize(640, 360)
         self.setStyleSheet("background:#111827; color:#cbd5e1; border-radius:12px;")

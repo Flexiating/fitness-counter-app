@@ -1,0 +1,1 @@
+QMainWindow { background:#f8fafc; color:#0f172a; } QFrame#card { background:#fff; border-radius:16px; }

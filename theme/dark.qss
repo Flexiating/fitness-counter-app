@@ -1,0 +1,5 @@
+QMainWindow { background:#121212; color:#f8fafc; } QWidget { font-family:-apple-system, Inter, sans-serif; }
+QFrame#card { background:#1E1E1E; border-radius:16px; } QLabel#muted { color:#94a3b8; font-size:13px; }
+QPushButton { background:#27272a; color:#f8fafc; border:0; border-radius:10px; padding:10px 14px; font-size:14px; }
+QPushButton:hover { background:#3B82F6; } QPushButton:disabled { color:#64748b; background:#202024; }
+QComboBox { background:#27272a; border:0; border-radius:10px; padding:9px; color:#fff; }

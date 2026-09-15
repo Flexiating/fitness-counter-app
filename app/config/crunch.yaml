@@ -1,0 +1,6 @@
+start_angle: 155
+finish_angle: 115
+visibility_threshold: 0.55
+min_rep_time: 0.4
+debounce_ms: 200
+body_rotation_limit: 35

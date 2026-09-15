@@ -3,7 +3,7 @@ from time import monotonic, sleep
 import cv2
 from PySide6.QtCore import QCoreApplication, QThread, Signal, Slot, QTimer
 from PySide6.QtGui import QImage
-from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QMainWindow, QMessageBox, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QMainWindow, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
 from app.camera.camera import Camera
 from app.data.storage import WorkoutStorage
@@ -16,6 +16,15 @@ from app.pose.angles import JOINT_ANGLE_TRIPLES, calculate_joint_angles
 from app.pose.pose_landmarks import LandmarkName
 from app.ui.camera_widget import CameraWidget
 from app.ui.widgets import value_label
+from app.ui.header import Header
+from app.ui.sidebar import Sidebar
+from app.ui.stats_panel import StatsPanel
+from app.ui.debug_panel import DebugPanel
+from app.ui.theme import load_theme
+from app.ui.timer_widget import TimerWidget
+from app.ui.posture_guide import PostureGuide
+from app.ui.translations import translate_debug, translate_exercise, translate_joint, translate_state, translate_status
+from app.timer.timer_controller import TimerController
 from app.utils.logger import get_logger
 
 log = get_logger(__name__)
@@ -113,9 +122,9 @@ class CameraWorker(QThread):
                 cv2.circle(frame, (int(point.x * width), int(point.y * height)), 4, (56, 189, 248), -1)
         confidence = sum(point.visibility for point in landmarks.values()) / len(landmarks) if landmarks else 0.0
         lines = [
-            f"Person: {'detected' if person_detected else 'not detected'}",
+            f"Người: {'đã phát hiện' if person_detected else 'chưa phát hiện'}",
             f"FPS: {fps:.1f}",
-            f"Confidence: {confidence:.0%}",
+            f"Độ tin cậy: {confidence:.0%}",
         ]
         for index, text in enumerate(lines):
             cv2.putText(frame, text, (16, 30 + index * 24), cv2.FONT_HERSHEY_SIMPLEX, 0.58, (255, 255, 255), 2)
@@ -136,37 +145,25 @@ class MainWindow(QMainWindow):
         self.manager = ExerciseManager()
         self.storage, self.started_at = WorkoutStorage(), None
         self.worker = None
+        self.timer=TimerController(); self.timer_enabled=True; self._last_reps=0; self.timer.changed.connect(self._timer_changed); self.timer.finished.connect(self._timer_finished)
         self._retired_workers: list[CameraWorker] = []
-        self.setWindowTitle("Fitness Counter")
-        self.resize(960, 760)
+        self.setWindowTitle("Bộ đếm bài tập")
+        self.resize(1280, 800)
+        self.setStyleSheet(load_theme())
         self._build()
 
     def _build(self) -> None:
-        root = QWidget(); layout = QVBoxLayout(root); layout.setSpacing(14)
-        title = value_label("FITNESS COUNTER", 28); layout.addWidget(title)
-        self.camera_view = CameraWidget(); layout.addWidget(self.camera_view, 1)
-        controls = QHBoxLayout(); controls.addWidget(QLabel("Exercise:"))
-        self.selector = QComboBox()
-        for key, name in self.manager.names.items(): self.selector.addItem(name, key)
-        self.selector.currentIndexChanged.connect(self._change_exercise); controls.addWidget(self.selector)
-        controls.addStretch(); self.count_caption = QLabel("Push-ups:"); controls.addWidget(self.count_caption); self.reps = value_label("0", 34); controls.addWidget(self.reps)
-        layout.addLayout(controls)
-        self.person = value_label("Person: not detected", 16); layout.addWidget(self.person)
-        self.state = value_label("State: Initializing...", 18); layout.addWidget(self.state)
-        self.angle_debug = QLabel("Joint angles: waiting for pose")
-        self.angle_debug.setWordWrap(True)
-        self.angle_debug.setStyleSheet("padding:8px; background:#1e293b; color:#e2e8f0; border-radius:6px;")
-        layout.addWidget(self.angle_debug)
-        self.exercise_debug = QLabel("Push-up debug: waiting for pose")
-        self.exercise_debug.setWordWrap(True)
-        self.exercise_debug.setStyleSheet("padding:8px; background:#172554; color:#dbeafe; border-radius:6px;")
-        layout.addWidget(self.exercise_debug)
-        buttons = QHBoxLayout(); self.start_button = QPushButton("Start"); self.start_button.clicked.connect(self.start)
-        self.stop_button = QPushButton("Stop Camera"); self.stop_button.setEnabled(False); self.stop_button.clicked.connect(self.stop_camera)
-        reset = QPushButton("Reset"); reset.clicked.connect(self.reset)
-        buttons.addWidget(self.start_button); buttons.addWidget(self.stop_button); buttons.addWidget(reset); buttons.addStretch(); layout.addLayout(buttons)
+        root = QWidget(); layout = QVBoxLayout(root); layout.setSpacing(14); header=Header(); layout.addWidget(header); self.timer_card=TimerWidget(); layout.addWidget(self.timer_card)
+        body=QHBoxLayout(); self.sidebar=Sidebar(self.manager.names); self.selector=self.sidebar.selector; self.selector.currentIndexChanged.connect(self._change_exercise)
+        self.start_button=self.sidebar.start; self.stop_button=self.sidebar.stop; self.stop_button.setEnabled(False); self.start_button.clicked.connect(self.start); self.stop_button.clicked.connect(self.stop_camera); self.sidebar.reset.clicked.connect(self.reset)
+        self.sidebar.timer_enabled.toggled.connect(self._set_timer_enabled); self.sidebar.apply_timer.clicked.connect(self._apply_timer_settings)
+        body.addWidget(self.sidebar,1); center=QVBoxLayout(); self.camera_view=CameraWidget(); self.camera_view.setStyleSheet("background:#020617;border:2px solid #3B82F6;border-radius:16px;"); center.addWidget(self.camera_view,1)
+        self.count_caption=QLabel("Chống đẩy:"); self.reps=value_label("0",72); self.person=value_label("Người: chưa phát hiện",16); self.state=value_label("Trạng thái: Đang khởi tạo...",18)
+        for widget in (self.count_caption,self.reps,self.person,self.state): center.addWidget(widget)
+        self.posture_guide=PostureGuide(); center.addWidget(self.posture_guide); body.addLayout(center,4); self.debug_drawer=DebugPanel(); self.debug_drawer.setVisible(False); body.addWidget(self.debug_drawer,1); layout.addLayout(body,1)
+        self.stats=StatsPanel(); layout.addWidget(self.stats)
+        self.angle_debug=self.debug_drawer.content; self.exercise_debug=self.debug_drawer.content
         self.setCentralWidget(root)
-        self.setStyleSheet("QMainWindow { background:#0f172a; color:#e2e8f0; } QPushButton,QComboBox { padding:8px 14px; background:#2563eb; color:white; border-radius:6px; }")
 
     @Slot()
     def start(self) -> None:
@@ -185,46 +182,63 @@ class MainWindow(QMainWindow):
         worker = self.worker
         if worker is None:
             return
-        self.state.setText("State: Stopping camera...")
+        self.state.setText("Trạng thái: Đang tắt camera...")
         self.stop_button.setEnabled(False)
         worker.stop()
         worker.quit()
         QCoreApplication.processEvents()
         if not worker.wait(1_500):
-            self.state.setText("State: Waiting for camera to stop...")
+            self.state.setText("Trạng thái: Đang chờ camera tắt...")
             return
         self._finalize_worker(worker)
 
     @Slot(int, str, str)
     def update_result(self, repetitions: int, state: str, status: str) -> None:
-        self.reps.setText(str(repetitions)); self.state.setText(f"State: {state} — {status}")
-        self.person.setText("Person: not detected" if state == "NO PERSON" else "Person: detected")
+        self.reps.setText(str(repetitions)); self.state.setText(f"Trạng thái: {translate_state(state)} — {translate_status(status)}")
+        self.person.setText("Người: chưa phát hiện" if state == "NO PERSON" else "Người: đã phát hiện")
+        if self.timer_enabled and repetitions > self._last_reps: self.timer.start_on_rep()
+        self._last_reps = repetitions
+
+    def _timer_changed(self, state: str, value: str) -> None:
+        self.timer_card.value.setText(value if state != "READY" else "SẴN SÀNG")
+
+    def _set_timer_enabled(self, enabled: bool) -> None:
+        self.timer_enabled=enabled; self.timer_card.setVisible(enabled)
+        if not enabled: self.timer.reset()
+
+    def _apply_timer_settings(self) -> None:
+        self.timer.configure(str(self.sidebar.timer_mode.currentData()), int(self.sidebar.timer_duration.currentData()))
+
+    def _timer_finished(self, duration: float) -> None:
+        self.stop_camera(); QMessageBox.information(self, "Hoàn thành buổi tập", f"Buổi tập đã hoàn thành\nThời gian: {int(duration)} giây\nSố lần: {self.reps.text()}")
 
     @Slot(dict)
     def update_angles(self, angles: dict) -> None:
         if not angles:
-            self.angle_debug.setText("Joint angles: no pose detected")
+            self.angle_debug.setText("Góc khớp: chưa phát hiện tư thế")
             return
-        values = "   ".join(f"{name}: {value:.0f}°" for name, value in angles.items())
-        self.angle_debug.setText(f"Joint angles\n{values}")
+        values = "   ".join(f"{translate_joint(name)}: {value:.0f}°" for name, value in angles.items())
+        self.angle_debug.setText(f"Góc khớp\n{values}")
 
     @Slot(str)
     def update_exercise_debug(self, debug: str) -> None:
-        self.exercise_debug.setText(debug or "Push-up debug: no pose detected")
+        self.exercise_debug.setText(translate_debug(debug) if debug else "Gỡ lỗi chống đẩy: chưa phát hiện tư thế")
 
     @Slot()
     def reset(self) -> None:
-        self.manager.reset(); self.reps.setText("0"); self.state.setText("State: Ready")
+        self.manager.reset(); self.reps.setText("0"); self.state.setText("Trạng thái: Sẵn sàng"); self._last_reps=0; self.timer.reset()
 
     @Slot(int)
     def _change_exercise(self, _index: int) -> None:
         self.manager.select(str(self.selector.currentData())); self.reset()
-        self.count_caption.setText("Push-ups:" if self.selector.currentData() == "push_up" else f"{self.manager.selected.name}s:")
+        self.count_caption.setText("Chống đẩy:" if self.selector.currentData() == "push_up" else f"{translate_exercise(self.manager.selected.name)}:")
+        self.posture_guide.set_exercise(str(self.selector.currentData()))
 
     @Slot(str)
     def show_error(self, message: str) -> None:
-        self.state.setText(f"State: {message}")
-        QMessageBox.warning(self, "Fitness Counter", message)
+        translated = translate_status(message)
+        self.state.setText(f"Trạng thái: {translated}")
+        QMessageBox.warning(self, "Bộ đếm bài tập", translated)
 
     @Slot()
     def _on_worker_finished(self) -> None:
@@ -246,7 +260,7 @@ class MainWindow(QMainWindow):
             self.start_button.setEnabled(True)
             self.stop_button.setEnabled(False)
             self.selector.setEnabled(True)
-            self.state.setText("State: Camera stopped")
+            self.state.setText("Trạng thái: Camera đã tắt")
         worker.deleteLater()
 
     def closeEvent(self, event) -> None:

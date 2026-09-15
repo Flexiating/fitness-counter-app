@@ -32,6 +32,16 @@ The script creates `.venv`, installs dependencies, and starts the app. If the ca
 
 Double-click `run_windows.bat`, or run it from Command Prompt. It creates `.venv`, installs the packages, and starts the app. Grant camera permission if Windows asks.
 
+## Create a no-install app
+
+For people who should not install Python or packages, build a native app once, then share the generated result.
+
+On macOS, run `./build_mac.sh`. Share `dist/Workout Tracker.app`.
+
+On Windows, run `build_windows.bat`. Share the complete `dist/Workout Tracker` folder, not only the `.exe` inside it.
+
+Build each platform on that platform: macOS creates the `.app`; Windows creates the `.exe`. The recipient can open the built app without Python, a virtual environment, or an internet connection.
+
 ## Use
 
 1. Choose **Push Up** or **Crunch**.
