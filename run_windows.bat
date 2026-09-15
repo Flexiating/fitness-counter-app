@@ -2,13 +2,7 @@
 setlocal
 cd /d "%~dp0"
 
-rem MediaPipe's classic Pose API used by this project supports Python 3.9–3.12.
-py -3.12 --version >nul 2>&1
-if not errorlevel 1 (
-    set "PYTHON_CMD=py -3.12"
-    set "VENV_DIR=.venv-3.12"
-    goto python_found
-)
+rem MediaPipe's classic Pose API used by this project supports Python 3.10–3.11.
 py -3.11 --version >nul 2>&1
 if not errorlevel 1 (
     set "PYTHON_CMD=py -3.11"
@@ -21,16 +15,10 @@ if not errorlevel 1 (
     set "VENV_DIR=.venv-3.10"
     goto python_found
 )
-py -3.9 --version >nul 2>&1
-if not errorlevel 1 (
-    set "PYTHON_CMD=py -3.9"
-    set "VENV_DIR=.venv-3.9"
-    goto python_found
-)
 
-echo Python 3.9-3.12 is required to run Fitness Counter.
-echo Python 3.14 is not supported by the MediaPipe Pose API used by this version.
-echo Install Python 3.12 from https://www.python.org/downloads/, then run this file again.
+echo Python 3.10-3.11 is required to run Fitness Counter.
+echo Python 3.12 and newer are not supported by the MediaPipe Pose API used by this version.
+echo Install Python 3.11 from https://www.python.org/downloads/, then run this file again.
 pause
 exit /b 1
 

@@ -13,15 +13,15 @@ A desktop Python app for macOS and Windows that uses a webcam and pose estimatio
 
 ## Requirements
 
-- Python 3.9–3.12 (Python 3.12 recommended). Python 3.13 and 3.14 are not
+- Python 3.10–3.11 (Python 3.11 recommended). Python 3.12 and newer are not
   compatible with the classic MediaPipe Pose API used by this version.
 - A webcam
 - macOS or Windows
 
 ## Run on macOS
 
-If Python 3.12 is not installed, first use
-[`set_up_mac/install_python_312.command`](set_up_mac/install_python_312.command).
+If Python 3.11 is not installed, first use
+[`set_up_mac/install_python_311.command`](set_up_mac/install_python_311.command).
 
 In Terminal from this folder:
 
@@ -30,12 +30,12 @@ chmod +x run_mac.sh
 ./run_mac.sh
 ```
 
-The script automatically selects Python 3.12, 3.11, 3.10, or 3.9, creates a matching private environment, installs dependencies, and starts the app. If none is installed, download Python 3.12 from [python.org](https://www.python.org/downloads/), then run the script again. If the camera is unavailable, allow your terminal/Python app in **System Settings → Privacy & Security → Camera**, then restart it.
+The script automatically selects Python 3.11 or 3.10, creates a matching private environment, installs dependencies, and starts the app. If neither is installed, download Python 3.11 from [python.org](https://www.python.org/downloads/), then run the script again. If the camera is unavailable, allow your terminal/Python app in **System Settings → Privacy & Security → Camera**, then restart it.
 
 ## Run on Windows
 
-If Python 3.12 is not installed, first double-click
-[`set_up_win/install_python_312.bat`](set_up_win/install_python_312.bat).
+If Python 3.11 is not installed, first double-click
+[`set_up_win/install_python_311.bat`](set_up_win/install_python_311.bat).
 
 Double-click `run_windows.bat`, or run it from Command Prompt. It automatically selects a compatible Python version, creates a private environment, installs the packages, and starts the app. Grant camera permission if Windows asks.
 

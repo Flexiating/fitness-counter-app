@@ -3,10 +3,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
-# MediaPipe's classic Pose API used by this project supports Python 3.9–3.12.
+# MediaPipe's classic Pose API used by this project supports Python 3.10–3.11.
 # Prefer the newest compatible interpreter found on the computer.
 PYTHON_BIN=""
-for candidate in python3.12 python3.11 python3.10 python3.9; do
+for candidate in python3.11 python3.10; do
     if command -v "$candidate" >/dev/null 2>&1; then
         PYTHON_BIN="$candidate"
         break
@@ -14,9 +14,9 @@ for candidate in python3.12 python3.11 python3.10 python3.9; do
 done
 
 if [ -z "$PYTHON_BIN" ]; then
-    echo "Python 3.9–3.12 is required to run Fitness Counter."
-    echo "Python 3.14 is not supported by the MediaPipe Pose API used by this version."
-    echo "Install Python 3.12 from https://www.python.org/downloads/, then run this file again."
+    echo "Python 3.10–3.11 is required to run Fitness Counter."
+    echo "Python 3.12 and newer are not supported by the MediaPipe Pose API used by this version."
+    echo "Install Python 3.11 from https://www.python.org/downloads/, then run this file again."
     exit 1
 fi
 
