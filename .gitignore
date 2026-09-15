@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 data/workouts.json
+data/sessions.json
+data/*.tmp
+logs/
 .DS_Store
 build/
 dist/

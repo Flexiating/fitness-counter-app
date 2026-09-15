@@ -25,5 +25,5 @@ if not errorlevel 1 (
 
 echo Opening the official Python download page.
 echo Download and install Python 3.11, then run ..\run_windows.bat
-start "" "https://www.python.org/downloads/"
+start "" "https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe"
 pause

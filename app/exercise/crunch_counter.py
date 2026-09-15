@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import hypot
+from functools import lru_cache
 from pathlib import Path
 from typing import Mapping
 
@@ -17,6 +17,7 @@ class CrunchResult:
     debug_info: str
 
 
+@lru_cache(maxsize=1)
 def _config() -> dict[str, float]:
     path = Path(__file__).parents[1] / "config" / "crunch.yaml"
     return {key.strip(): float(value.strip()) for line in path.read_text().splitlines() if ":" in line
@@ -26,7 +27,7 @@ def _config() -> dict[str, float]:
 class CrunchCounter(BaseCounter):
     """Angle/coordinate-based crunch FSM with visibility and timing safeguards."""
     def __init__(self) -> None:
-        cfg = _config(); self.cfg = cfg
+        cfg = dict(_config()); self.cfg = cfg
         super().__init__(cfg["debounce_ms"] / 1000, cfg["min_rep_time"])
 
     def update(self, angles: Mapping[str, float], coordinates: Mapping[str, tuple[float, float]], visibility: Mapping[str, float], timestamp: float) -> CrunchResult:

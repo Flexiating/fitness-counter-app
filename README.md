@@ -103,3 +103,4 @@ Create another class implementing `PoseModel.load`, `predict`, and `close`. Its 
 - **No camera**: close other camera apps, check OS permission, then reconnect or select a different camera index in `Camera`.
 - **Not counting**: use a side-on view with shoulder, elbow/hip, and knee/wrist visible; make complete movements and adjust thresholds for your setup.
 - **Package install fails**: confirm a supported Python version and update `pip` (the launchers do this automatically).
+- **Unexpected error**: diagnostic messages are written to `logs/app.log` with automatic rotation.

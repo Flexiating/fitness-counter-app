@@ -33,8 +33,12 @@ def test_camera_worker_reports_no_person_and_processes_pose(monkeypatch) -> None
     monkeypatch.setattr("app.ui.main_window.PoseDetector", FakePoseDetector)
     worker = CameraWorker(ExerciseManager())
     statuses, images = [], []
-    worker.result_ready.connect(lambda _reps, state, status: statuses.append((state, status)))
-    worker.frame_ready.connect(images.append)
+    worker.result_ready.connect(lambda _reps, state, status, _generation: statuses.append((state, status)))
+    def receive_image(image):
+        images.append(image)
+        worker.frame_consumed()
+
+    worker.frame_ready.connect(receive_image)
     worker.run()
 
     assert ("NO PERSON", "No person detected") in statuses

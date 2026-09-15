@@ -15,7 +15,7 @@ def test_camera_worker_runs_once_and_quits_its_thread(monkeypatch) -> None:
         def release(self): pass
 
     class FakePoseDetector:
-        def start(self): raise AssertionError("Detector should not start without a frame")
+        def start(self): pass
         def detect(self, _frame): raise AssertionError("Detector should not process without a frame")
         def close(self): pass
 

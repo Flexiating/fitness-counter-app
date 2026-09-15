@@ -16,3 +16,10 @@ def test_crunch_adapter_reports_pose_state() -> None:
     for x, y in ((-1.0, 0.0), (0.0, 1.0), (-1.0, 0.0)):
         for _ in range(3): result = exercise.process(pose(x, y))
     assert result.state == "UP" and result.repetitions == 0
+    assert exercise.get_repetitions() == 0
+
+
+def test_crunch_waits_for_visible_body_without_crashing() -> None:
+    result = CrunchExercise().process({})
+    assert result.state == "WAITING"
+    assert result.repetitions == 0

@@ -1,8 +1,5 @@
 from typing import Any
 
-import cv2
-import mediapipe as mp
-
 from app.config.settings import SETTINGS
 from app.models.pose_model import PoseModel
 from app.pose.pose_landmarks import Landmark, LandmarkName, PoseLandmarks
@@ -27,18 +24,25 @@ class MediaPipePoseModel(PoseModel):
 
     def __init__(self) -> None:
         self._pose: Any = None
+        self._cv2: Any = None
 
     def load(self) -> None:
+        import cv2
+        import mediapipe as mp
+
+        self._cv2 = cv2
         self._pose = mp.solutions.pose.Pose(
-            static_image_mode=False, model_complexity=1, enable_segmentation=False,
+            static_image_mode=False,
+            model_complexity=SETTINGS.pose_model_complexity,
+            enable_segmentation=False,
             min_detection_confidence=SETTINGS.pose_min_confidence,
             min_tracking_confidence=SETTINGS.pose_tracking_confidence,
         )
 
     def predict(self, frame: Any) -> PoseLandmarks:
-        if self._pose is None:
+        if self._pose is None or self._cv2 is None:
             raise RuntimeError("Pose model has not been loaded")
-        result = self._pose.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        result = self._pose.process(self._cv2.cvtColor(frame, self._cv2.COLOR_BGR2RGB))
         if not result.pose_landmarks:
             return {}
         raw = result.pose_landmarks.landmark
@@ -46,6 +50,9 @@ class MediaPipePoseModel(PoseModel):
                 for name, index in self._mapping.items()}
 
     def close(self) -> None:
-        if self._pose:
-            self._pose.close()
+        try:
+            if self._pose:
+                self._pose.close()
+        finally:
             self._pose = None
+            self._cv2 = None

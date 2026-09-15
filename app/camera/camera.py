@@ -3,8 +3,6 @@ from __future__ import annotations
 import platform
 from typing import Any
 
-import cv2
-
 from app.config.settings import SETTINGS
 from app.utils.logger import get_logger
 
@@ -16,6 +14,8 @@ class Camera:
         self.index, self._capture = index, None
 
     def open(self) -> None:
+        import cv2
+
         self._capture = cv2.VideoCapture(self.index)
         if not self._capture.isOpened():
             self.release()
@@ -25,6 +25,8 @@ class Camera:
             raise RuntimeError("Could not open camera." + hint)
         self._capture.set(cv2.CAP_PROP_FRAME_WIDTH, SETTINGS.camera_width)
         self._capture.set(cv2.CAP_PROP_FRAME_HEIGHT, SETTINGS.camera_height)
+        self._capture.set(cv2.CAP_PROP_FPS, SETTINGS.target_fps)
+        self._capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         log.info("Camera %s initialized", self.index)
 
     def read(self) -> Any | None:
@@ -35,5 +37,7 @@ class Camera:
 
     def release(self) -> None:
         if self._capture is not None:
-            self._capture.release()
-            self._capture = None
+            try:
+                self._capture.release()
+            finally:
+                self._capture = None

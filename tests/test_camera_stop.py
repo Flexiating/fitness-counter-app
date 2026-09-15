@@ -6,8 +6,9 @@ from app.exercises.exercise_manager import ExerciseManager
 from app.ui.main_window import CameraWorker
 
 
-def test_worker_can_stop_and_restart_twenty_times(monkeypatch) -> None:
+def test_worker_can_stop_and_restart_one_hundred_times(monkeypatch) -> None:
     releases = []
+    closes = []
 
     class FakeCamera:
         def open(self): pass
@@ -17,13 +18,13 @@ def test_worker_can_stop_and_restart_twenty_times(monkeypatch) -> None:
     class FakePoseDetector:
         def start(self): pass
         def detect(self, _frame): return {}
-        def close(self): pass
+        def close(self): closes.append(True)
 
     monkeypatch.setattr("app.ui.main_window.Camera", FakeCamera)
     monkeypatch.setattr("app.ui.main_window.PoseDetector", FakePoseDetector)
     QCoreApplication.instance() or QCoreApplication([])
 
-    for _ in range(20):
+    for _ in range(100):
         loop, worker = QEventLoop(), CameraWorker(ExerciseManager())
         worker.finished.connect(loop.quit)
         worker.start()
@@ -32,4 +33,5 @@ def test_worker_can_stop_and_restart_twenty_times(monkeypatch) -> None:
         loop.exec()
         assert not worker.isRunning()
 
-    assert len(releases) >= 20
+    assert len(releases) == 100
+    assert len(closes) == 100

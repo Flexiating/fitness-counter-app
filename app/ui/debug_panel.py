@@ -1,4 +1,15 @@
-from PySide6.QtWidgets import QFrame,QVBoxLayout,QLabel
+from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout
+
+
 class DebugPanel(QFrame):
-    def __init__(self):
-        super().__init__(); self.setObjectName("card"); layout=QVBoxLayout(self); layout.addWidget(QLabel("GỠ LỖI")); self.content=QLabel("Bật Chế độ gỡ lỗi để xem trạng thái, góc, ngưỡng, độ hiển thị, các lần lặp bị từ chối và điểm mốc."); self.content.setWordWrap(True); layout.addWidget(self.content)
+    def __init__(self) -> None:
+        super().__init__()
+        self.setObjectName("card")
+        layout = QVBoxLayout(self)
+        layout.addWidget(QLabel("DEBUG CONSOLE"))
+        self.angle_content = QLabel("Joint angles: no pose detected")
+        self.exercise_content = QLabel("No exercise data")
+        for label in (self.angle_content, self.exercise_content):
+            label.setWordWrap(True)
+            label.setObjectName("muted")
+            layout.addWidget(label)

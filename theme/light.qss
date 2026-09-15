@@ -1,1 +1,22 @@
-QMainWindow { background:#f8fafc; color:#0f172a; } QFrame#card { background:#fff; border-radius:16px; }
+QMainWindow, QDialog { background:#f1f5f9; color:#0f172a; }
+QWidget { font-family:Arial; color:#0f172a; font-size:14px; }
+QFrame#headerCard, QFrame#sidebarCard, QFrame#card, QFrame#compactStatus,
+QFrame#miniCard, QFrame#statCard, QFrame#guideCard { background:#fff; border:1px solid #dce3ed; border-radius:16px; }
+QLabel#appTitle, QLabel#placeholderTitle, QLabel#dialogTitle { font-size:23px; font-weight:800; }
+QLabel#exerciseTitle { color:#2563eb; font-weight:700; }
+QLabel#sectionLabel, QLabel#muted { color:#64748b; font-size:12px; }
+QLabel#headerValue, QLabel#statValue, QLabel#scoreValue, QLabel#summaryValue { font-weight:750; }
+QLabel#cameraSurface { background:#000; color:#94a3b8; border-radius:18px; }
+QLabel#cameraHud, QLabel#cameraTimer { background:rgba(15,23,42,155); color:#fff; border-radius:8px; padding:7px; font-size:12px; }
+QLabel#cameraCountdown { background:rgba(0,0,0,155); color:#fff; font-size:92px; font-weight:900; }
+QLabel#guideText { color:#334155; font-size:14px; }
+QLabel#guideIllustration { min-height:100px; background:#f8fafc; color:#64748b; border:1px dashed #94a3b8; border-radius:12px; }
+QPushButton { min-height:22px; background:#e2e8f0; border:1px solid #cbd5e1; border-radius:10px; padding:9px 13px; }
+QPushButton#primaryButton { background:#2563eb; color:#fff; }
+QPushButton:disabled { color:#94a3b8; background:#e2e8f0; }
+QComboBox, QSpinBox { min-height:20px; background:#fff; border:1px solid #cbd5e1; border-radius:9px; padding:8px; }
+QTabWidget#mainTabs::pane { border:0; }
+QTabBar::tab { padding:9px 20px; color:#64748b; }
+QTabBar::tab:selected { color:#2563eb; border-bottom:2px solid #2563eb; }
+QProgressBar { background:#e2e8f0; border:0; border-radius:5px; }
+QProgressBar::chunk { background:#2563eb; border-radius:5px; }

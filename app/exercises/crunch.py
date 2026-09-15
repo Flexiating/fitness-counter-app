@@ -18,7 +18,7 @@ class CrunchExercise(BaseExercise):
 
     def process(self, landmarks: PoseLandmarks) -> ExerciseResult:
         if not landmarks_visible(landmarks, self.required_landmarks, SETTINGS.min_visibility):
-            return ExerciseResult(self.counter.repetitions, "WAITING", "Move farther from the camera", {})
+            return ExerciseResult(self.counter.count, "WAITING", "Move farther from the camera", {})
         angles = calculate_joint_angles(landmarks)
         coords = {name.value: (point.x, point.y) for name, point in landmarks.items()}
         visibility = {name.value: point.visibility for name, point in landmarks.items()}
@@ -29,4 +29,4 @@ class CrunchExercise(BaseExercise):
         self.counter.reset()
 
     def get_repetitions(self) -> int:
-        return self.counter.repetitions
+        return self.counter.count
