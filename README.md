@@ -13,7 +13,8 @@ A desktop Python app for macOS and Windows that uses a webcam and pose estimatio
 
 ## Requirements
 
-- Python 3.11 or newer (recommended)
+- Python 3.9–3.12 (Python 3.12 recommended). Python 3.13 and 3.14 are not
+  compatible with the classic MediaPipe Pose API used by this version.
 - A webcam
 - macOS or Windows
 
@@ -26,11 +27,11 @@ chmod +x run_mac.sh
 ./run_mac.sh
 ```
 
-The script creates `.venv`, installs dependencies, and starts the app. If the camera is unavailable, allow your terminal/Python app in **System Settings → Privacy & Security → Camera**, then restart it.
+The script automatically selects Python 3.12, 3.11, 3.10, or 3.9, creates a matching private environment, installs dependencies, and starts the app. If none is installed, download Python 3.12 from [python.org](https://www.python.org/downloads/), then run the script again. If the camera is unavailable, allow your terminal/Python app in **System Settings → Privacy & Security → Camera**, then restart it.
 
 ## Run on Windows
 
-Double-click `run_windows.bat`, or run it from Command Prompt. It creates `.venv`, installs the packages, and starts the app. Grant camera permission if Windows asks.
+Double-click `run_windows.bat`, or run it from Command Prompt. It automatically selects a compatible Python version, creates a private environment, installs the packages, and starts the app. Grant camera permission if Windows asks.
 
 ## Create a no-install app
 

@@ -1,5 +1,6 @@
 # The 0.10.14 release exposes the classic `mp.solutions.pose` API used by the
-# Stage 1 adapter. Later distributions may expose only the Tasks API.
+# Stage 1 adapter. It supports Python 3.9 through 3.12; the launchers select a
+# compatible installed Python version automatically.
 mediapipe==0.10.14
 opencv-python>=4.9.0,<5.0
 numpy>=1.26.0,<2.0
