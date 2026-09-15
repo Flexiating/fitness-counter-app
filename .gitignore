@@ -7,6 +7,12 @@ data/sessions.json
 data/*.tmp
 logs/
 .DS_Store
-build/
-dist/
+build/*
+!build/.gitkeep
+dist/*
+!dist/.gitkeep
+release/*
+!release/.gitkeep
 *.spec
+!WorkoutTracker.spec
+icons/*.iconset/

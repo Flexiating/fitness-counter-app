@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "workout-tracker"
+version = "1.0.0"
+description = "Cross-platform computer-vision workout tracker"
+readme = "README.md"
+requires-python = ">=3.10,<3.12"
+dependencies = [
+    "mediapipe==0.10.14",
+    "numpy>=1.26.0,<2.0",
+    "opencv-python>=4.9.0,<5.0",
+    "PySide6>=6.6.0,<6.11",
+]
+
+[project.optional-dependencies]
+build = [
+    "Pillow>=10.0,<12.0",
+    "pyinstaller>=6.0,<7.0",
+]
+test = ["pytest>=8.0,<9.0"]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "test"]
+addopts = "-q"

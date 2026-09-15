@@ -1,7 +1,8 @@
 import logging
 from logging.handlers import RotatingFileHandler
-from pathlib import Path
 from threading import Lock
+
+from app.utils.paths import app_data_path
 
 
 _CONFIGURATION_LOCK = Lock()
@@ -26,8 +27,7 @@ def _configure_logging() -> None:
         root_logger.addHandler(console)
 
         try:
-            log_path = Path("logs") / "app.log"
-            log_path.parent.mkdir(parents=True, exist_ok=True)
+            log_path = app_data_path("logs", "app.log")
             file_handler = RotatingFileHandler(
                 log_path,
                 maxBytes=2 * 1024 * 1024,

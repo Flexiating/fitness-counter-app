@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import lru_cache
-from pathlib import Path
 from typing import Mapping
 
 from app.exercise.base_counter import BaseCounter, CounterState
+from app.utils.paths import resource_path
 
 
 @dataclass(frozen=True)
@@ -19,8 +19,8 @@ class CrunchResult:
 
 @lru_cache(maxsize=1)
 def _config() -> dict[str, float]:
-    path = Path(__file__).parents[1] / "config" / "crunch.yaml"
-    return {key.strip(): float(value.strip()) for line in path.read_text().splitlines() if ":" in line
+    path = resource_path("app", "config", "crunch.yaml")
+    return {key.strip(): float(value.strip()) for line in path.read_text(encoding="utf-8").splitlines() if ":" in line
             for key, value in [line.split(":", 1)]}
 
 
