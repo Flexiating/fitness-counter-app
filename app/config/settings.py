@@ -6,7 +6,9 @@ class Settings:
     camera_width: int = 960
     camera_height: int = 540
     target_fps: int = 30
-    pose_model_complexity: int = 0
+    # Full pose landmarks are materially more reliable for floor exercises
+    # where the far-side arm and hip can be partially occluded.
+    pose_model_complexity: int = 1
     pose_min_confidence: float = 0.55
     pose_tracking_confidence: float = 0.55
     min_visibility: float = 0.55

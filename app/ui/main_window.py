@@ -100,6 +100,7 @@ class CameraWorker(QThread):
                 return
             phase = "processing"
             generation = self.manager.generation
+            processor_generation = generation
             self._emit_result(self.manager.repetitions(), "READY", "Ready", generation)
             while not self.isInterruptionRequested():
                 frame_started_at = monotonic()
@@ -122,6 +123,12 @@ class CameraWorker(QThread):
                     self._emit_telemetry(0.0, fps, generation, frame_started_at)
                     self._sleep_to_target(frame_started_at)
                     continue
+                current_generation = self.manager.generation
+                if current_generation != processor_generation:
+                    # Landmark moving averages belong to the exercise
+                    # generation in which they were collected.
+                    processor.reset()
+                    processor_generation = current_generation
                 landmarks = processor.process(detected)
                 generation, result = self.manager.process_snapshot(landmarks)
                 angles = result.angles
@@ -509,6 +516,24 @@ class MainWindow(QMainWindow):
     @staticmethod
     def _quality_for_status(tracking: float, status: str, state: str) -> tuple[float, str, str, bool]:
         normalized = status.lower()
+        # Exercise detectors may provide a weighted, temporally smoothed score.
+        # Keep the presentation generic while using that richer result.
+        marker = "form score:"
+        if marker in normalized:
+            try:
+                score = float(normalized.split(marker, 1)[1].split("%", 1)[0].strip())
+            except ValueError:
+                pass
+            else:
+                score = max(0.0, min(100.0, score))
+                valid = "posture: bad" not in normalized
+                if not valid or score < 60:
+                    return score, "Cần điều chỉnh", "#EF4444", False
+                if score < 75:
+                    return score, "Chấp nhận được", "#F59E0B", True
+                if score < 90:
+                    return score, "Tốt", "#3B82F6", True
+                return score, "Xuất sắc", "#22C55E", True
         if tracking < 40 or state == "NO PERSON":
             return tracking * 0.5, "Mất theo dõi", "#94a3b8", False
         if any(word in normalized for word in ("bad", "lost", "not visible", "standing", "rejected")):
@@ -519,6 +544,9 @@ class MainWindow(QMainWindow):
 
     def _update_coach(self, status: str, state: str, completed_rep: bool) -> None:
         normalized = status.lower()
+        if str(self.selector.currentData()) == "crunch":
+            self._update_crunch_coach(normalized, state, completed_rep)
+            return
         if completed_rep:
             self.workout_status.set_coach("Nhịp độ tốt — tiếp tục phát huy!", "#22C55E")
         elif "hips too" in normalized:
@@ -531,6 +559,26 @@ class MainWindow(QMainWindow):
             self.workout_status.set_coach("Điều chỉnh vị trí để camera nhìn rõ toàn bộ cơ thể.", "#F59E0B")
         elif state in {"UP", "DOWN"}:
             self.workout_status.set_coach("Tư thế tốt — giữ chuyển động ổn định.", "#22C55E")
+
+    def _update_crunch_coach(self, status: str, state: str, completed_rep: bool) -> None:
+        if completed_rep:
+            self.workout_status.set_coach("Một lần gập bụng tốt — tiếp tục!", "#22C55E")
+        elif "neck" in status:
+            self.workout_status.set_coach("Giữ cổ tự nhiên, không dùng tay kéo đầu.", "#F59E0B")
+        elif "lower back" in status:
+            self.workout_status.set_coach("Giữ lưng dưới ổn định trên sàn.", "#F59E0B")
+        elif "slowly" in status or "control" in status:
+            self.workout_status.set_coach("Di chuyển chậm và có kiểm soát.", "#F59E0B")
+        elif "lift your shoulders" in status or "full range" in status:
+            self.workout_status.set_coach("Nâng vai cao hơn để đủ biên độ.", "#F59E0B")
+        elif "lie back" in status:
+            self.workout_status.set_coach("Nằm xuống hoàn toàn để vào tư thế bắt đầu.", "#F59E0B")
+        elif any(word in status for word in ("standing", "sitting", "sideways", "inside the frame")):
+            self.workout_status.set_coach("Nằm nghiêng với toàn bộ cơ thể trong khung hình.", "#EF4444")
+        elif state == "UP":
+            self.workout_status.set_coach("Hạ vai xuống từ từ và giữ lưng dưới ổn định.", "#22C55E")
+        elif state == "DOWN":
+            self.workout_status.set_coach("Sẵn sàng — nâng vai bằng cơ bụng.", "#22C55E")
 
     def _update_camera_hud(self) -> None:
         self.camera_view.set_hud(

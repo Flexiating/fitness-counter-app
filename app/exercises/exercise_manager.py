@@ -1,14 +1,17 @@
 from threading import Lock
 
 from app.exercises.base_exercise import BaseExercise, ExerciseResult
-from app.exercises.crunch import CrunchExercise
+from app.exercises.crunch import CrunchDetector
 from app.exercises.push_up import PushUpExercise
 from app.pose.pose_landmarks import PoseLandmarks
 
 
 class ExerciseManager:
     def __init__(self) -> None:
-        self._exercises: dict[str, BaseExercise] = {"push_up": PushUpExercise(), "crunch": CrunchExercise()}
+        self._exercises: dict[str, BaseExercise] = {
+            "push_up": PushUpExercise(),
+            "crunch": CrunchDetector(),
+        }
         self._selected = "push_up"
         self._generation = 0
         self._lock = Lock()
@@ -26,9 +29,17 @@ class ExerciseManager:
         with self._lock:
             if key not in self._exercises:
                 raise KeyError(f"Unknown exercise: {key}")
+            # Clear every exercise-specific state buffer. This ensures that
+            # switching back later cannot revive a previous rep stage.
+            for exercise in self._exercises.values():
+                exercise.reset()
             self._selected = key
-            self._exercises[key].reset()
             self._generation += 1
+
+    @property
+    def selected_detector_name(self) -> str:
+        with self._lock:
+            return type(self._exercises[self._selected]).__name__
 
     def process(self, landmarks: PoseLandmarks) -> ExerciseResult:
         with self._lock:

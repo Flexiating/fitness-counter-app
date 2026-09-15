@@ -42,7 +42,9 @@ def test_camera_worker_reports_no_person_and_processes_pose(monkeypatch) -> None
     worker.run()
 
     assert ("NO PERSON", "No person detected") in statuses
-    assert any(state == "UP" for state, _status in statuses)
+    # A single detected frame may enter READY, but cannot activate UP until
+    # the posture remains stable for the debounce interval.
+    assert any(state == "READY" for state, _status in statuses)
     assert len(images) == 2
 
 
@@ -56,3 +58,44 @@ def test_skeleton_overlay_draws_connections() -> None:
 def test_pose_debug_metrics_include_requested_joint_types() -> None:
     angles = calculate_joint_angles(up_pose())
     assert {"Left elbow", "Left shoulder", "Left hip", "Left knee"}.issubset(angles)
+
+
+def test_camera_worker_clears_landmark_smoothing_on_exercise_switch(monkeypatch) -> None:
+    frames = [np.zeros((32, 48, 3), dtype=np.uint8) for _ in range(3)]
+    manager = ExerciseManager()
+
+    class FakeCamera:
+        def open(self): pass
+        def read(self): return frames.pop(0) if frames else None
+        def release(self): pass
+
+    class SwitchingPoseDetector:
+        calls = 0
+
+        def start(self): pass
+
+        def detect(self, _frame):
+            type(self).calls += 1
+            if type(self).calls == 2:
+                manager.select("crunch")
+            return up_pose()
+
+        def close(self): pass
+
+    class RecordingProcessor:
+        resets = 0
+
+        def process(self, landmarks): return landmarks
+
+        def reset(self):
+            type(self).resets += 1
+
+    monkeypatch.setattr("app.ui.main_window.Camera", FakeCamera)
+    monkeypatch.setattr("app.ui.main_window.PoseDetector", SwitchingPoseDetector)
+    monkeypatch.setattr("app.ui.main_window.MotionProcessor", RecordingProcessor)
+    worker = CameraWorker(manager)
+    worker.frame_ready.connect(lambda _image: worker.frame_consumed())
+    worker.run()
+
+    assert RecordingProcessor.resets == 1
+    assert manager.selected_detector_name == "CrunchDetector"
