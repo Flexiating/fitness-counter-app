@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from app.ui.translations import translate_exercise
+from app.ui.translations import tr, translate_exercise
 
 
 class Sidebar(QFrame):
@@ -23,20 +23,18 @@ class Sidebar(QFrame):
         layout.setContentsMargins(18, 18, 18, 18)
         layout.setSpacing(9)
 
-        layout.addWidget(self._heading("BÀI TẬP"))
+        self.exercise_heading = self._heading("")
+        layout.addWidget(self.exercise_heading)
         self.selector = QComboBox()
         for key, name in exercises.items():
             self.selector.addItem(translate_exercise(name), key)
         layout.addWidget(self.selector)
-        upcoming = QLabel("Sắp có: Squat · Plank · Lunge")
-        upcoming.setObjectName("muted")
-        layout.addWidget(upcoming)
-
         layout.addSpacing(8)
-        layout.addWidget(self._heading("MỤC TIÊU"))
+        self.goal_heading = self._heading("")
+        layout.addWidget(self.goal_heading)
         goal_row = QHBoxLayout()
-        self.target_reps = self._spinbox(1, 999, 20, " lần")
-        self.target_sets = self._spinbox(1, 99, 3, " hiệp")
+        self.target_reps = self._spinbox(1, 999, 20, "")
+        self.target_sets = self._spinbox(1, 99, 3, "")
         goal_row.addWidget(self.target_reps)
         goal_row.addWidget(self.target_sets)
         layout.addLayout(goal_row)
@@ -44,39 +42,57 @@ class Sidebar(QFrame):
         self.target_sets.valueChanged.connect(self._emit_goals)
 
         layout.addSpacing(8)
-        layout.addWidget(self._heading("HẸN GIỜ BUỔI TẬP"))
-        self.timer_enabled = QCheckBox("Bật hẹn giờ")
+        self.timer_heading = self._heading("")
+        layout.addWidget(self.timer_heading)
+        self.timer_enabled = QCheckBox()
         self.timer_enabled.setChecked(True)
         layout.addWidget(self.timer_enabled)
         self.timer_mode = QComboBox()
-        self.timer_mode.addItem("Bấm giờ", "stopwatch")
-        self.timer_mode.addItem("Đếm ngược", "countdown")
+        self.timer_mode.addItem("", "stopwatch")
+        self.timer_mode.addItem("", "countdown")
         layout.addWidget(self.timer_mode)
         self.timer_duration = QComboBox()
         for seconds in (30, 60, 90, 120):
-            self.timer_duration.addItem(f"{seconds} giây", seconds)
-        self.timer_duration.addItem("Tùy chỉnh...", -1)
+            self.timer_duration.addItem("", seconds)
+        self.timer_duration.addItem("", -1)
         layout.addWidget(self.timer_duration)
-        self.custom_duration = self._spinbox(1, 3_600, 60, " giây")
+        self.custom_duration = self._spinbox(1, 3_600, 60, "")
         self.custom_duration.hide()
         layout.addWidget(self.custom_duration)
         self.timer_duration.currentIndexChanged.connect(self._duration_changed)
-        self.apply_timer = QPushButton("Áp dụng hẹn giờ")
+        self.apply_timer = QPushButton()
         layout.addWidget(self.apply_timer)
 
-        self.debug_mode = QCheckBox("Chế độ gỡ lỗi")
+        self.debug_mode = QCheckBox()
         layout.addWidget(self.debug_mode)
         layout.addStretch()
 
-        self.start = QPushButton("▶  Bật camera")
+        self.start = QPushButton()
         self.start.setObjectName("primaryButton")
-        self.stop = QPushButton("■  Tắt camera")
-        self.reset = QPushButton("↻  Đặt lại bộ đếm")
-        self.pause = QPushButton("Ⅱ  Tạm dừng")
-        self.settings = QPushButton("⚙  Cài đặt")
+        self.stop = QPushButton()
+        self.reset = QPushButton()
+        self.pause = QPushButton()
+        self.settings = QPushButton()
         self.pause.setEnabled(False)
         for button in (self.start, self.stop, self.reset, self.pause, self.settings):
             layout.addWidget(button)
+        self.retranslate()
+
+    def retranslate(self) -> None:
+        self.exercise_heading.setText(tr("exercise.label"))
+        for index in range(self.selector.count()):
+            self.selector.setItemText(index, translate_exercise(str(self.selector.itemData(index))))
+        self.goal_heading.setText(tr("goal.label"))
+        self.target_reps.setSuffix(tr("goal.reps_suffix")); self.target_sets.setSuffix(tr("goal.sets_suffix"))
+        self.timer_heading.setText(tr("timer.label")); self.timer_enabled.setText(tr("timer.enabled"))
+        self.timer_mode.setItemText(0, tr("timer.stopwatch")); self.timer_mode.setItemText(1, tr("timer.countdown"))
+        for index in range(self.timer_duration.count()):
+            seconds = self.timer_duration.itemData(index)
+            self.timer_duration.setItemText(index, tr("timer.custom") if seconds == -1 else tr("timer.seconds", seconds=seconds))
+        self.custom_duration.setSuffix(" " + tr("timer.seconds", seconds="").strip())
+        self.apply_timer.setText(tr("timer.apply")); self.debug_mode.setText(tr("debug.mode"))
+        self.start.setText(tr("button.start_camera")); self.stop.setText(tr("button.stop_camera"))
+        self.reset.setText(tr("button.reset")); self.pause.setText(tr("button.pause")); self.settings.setText(tr("button.settings"))
 
     @staticmethod
     def _heading(text: str) -> QLabel:

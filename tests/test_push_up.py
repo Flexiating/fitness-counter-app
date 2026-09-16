@@ -42,7 +42,7 @@ def test_push_up_chooses_the_more_visible_side() -> None:
     assert "No complete body side" not in result.status
 
 
-def test_temporary_far_side_occlusion_does_not_reject_correct_plank(monkeypatch) -> None:
+def test_temporary_far_side_occlusion_does_not_reject_correct_alignment(monkeypatch) -> None:
     exercise = PushUpExercise()
     timeline(monkeypatch, (0.0, .1, .21))
     first = exercise.process(pose())

@@ -1,8 +1,23 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-if not exist .venv\Scripts\python.exe py -3 -m venv .venv
-call .venv\Scripts\activate.bat
+py -3.11 --version >nul 2>&1
+if not errorlevel 1 (
+    set "PYTHON_CMD=py -3.11"
+    set "VENV_DIR=.venv-3.11"
+    goto python_found
+)
+py -3.10 --version >nul 2>&1
+if not errorlevel 1 (
+    set "PYTHON_CMD=py -3.10"
+    set "VENV_DIR=.venv-3.10"
+    goto python_found
+)
+echo Python 3.10 or 3.11 is required.
+exit /b 1
+
+:python_found
+if not exist "%VENV_DIR%\Scripts\python.exe" %PYTHON_CMD% -m venv "%VENV_DIR%"
+call "%VENV_DIR%\Scripts\activate.bat"
 python -m pip install -r requirements.txt
-pyinstaller --noconfirm --clean --windowed --name "Workout Tracker" --add-data "app;app" --collect-all mediapipe --collect-all cv2 app\main.py
-echo Created: %CD%\dist\Workout Tracker\Workout Tracker.exe
+python scripts\build_windows.py --skip-install

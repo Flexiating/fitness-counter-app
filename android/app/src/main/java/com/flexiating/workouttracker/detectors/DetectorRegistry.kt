@@ -7,12 +7,9 @@ import javax.inject.Singleton
 @Singleton
 class DetectorRegistry @Inject constructor(
     pushUp: PushUpDetector,
-    crunch: CrunchDetector,
-    squat: SquatDetector,
-    plank: PlankDetector,
-    lunge: LungeDetector
+    crunch: CrunchDetector
 ) {
-    private val detectors: Map<ExerciseType, BaseExerciseDetector> = listOf(pushUp, crunch, squat, plank, lunge).associateBy { it.type }
+    private val detectors: Map<ExerciseType, BaseExerciseDetector> = listOf(pushUp, crunch).associateBy { it.type }
     private var selected = ExerciseType.PUSH_UP
 
     @Synchronized fun select(type: ExerciseType): BaseExerciseDetector {
@@ -26,4 +23,3 @@ class DetectorRegistry @Inject constructor(
     @Synchronized fun current(): BaseExerciseDetector = requireNotNull(detectors[selected])
     @Synchronized fun resetCurrent() = current().reset()
 }
-

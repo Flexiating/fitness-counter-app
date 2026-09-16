@@ -2,45 +2,48 @@ from datetime import datetime
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout
+from app.ui.translations import tr
 
 
 class Header(QFrame):
     def __init__(self) -> None:
         super().__init__()
         self.setObjectName("headerCard")
-        self._camera_status = "Camera đã dừng"
-        self._model_status = "Mô hình chưa tải"
+        self._camera_status_key = "camera.stopped"
+        self._model_status_key = "camera.model_unloaded"
         layout = QHBoxLayout(self)
         layout.setContentsMargins(22, 14, 22, 14)
 
         title_column = QVBoxLayout()
-        self.title = QLabel("WORKOUT TRACKER")
+        self.title = QLabel()
         self.title.setObjectName("appTitle")
-        self.exercise = QLabel("Chống đẩy")
+        self.exercise = QLabel()
         self.exercise.setObjectName("exerciseTitle")
         title_column.addWidget(self.title)
         title_column.addWidget(self.exercise)
         layout.addLayout(title_column)
         layout.addStretch()
 
-        self.camera = self._metric(layout, "CAMERA", self._camera_status)
-        self.model = self._metric(layout, "MÔ HÌNH", self._model_status)
-        self.fps = self._metric(layout, "HIỆU NĂNG", "— FPS")
-        self.workout_timer = self._metric(layout, "THỜI GIAN", "00:00")
-        self.clock = self._metric(layout, "BÂY GIỜ", "--:--")
+        self.metric_headings: list[QLabel] = []
+        self.camera = self._metric(layout, "", "")
+        self.model = self._metric(layout, "", "")
+        self.fps = self._metric(layout, "", "— FPS")
+        self.workout_timer = self._metric(layout, "", "00:00")
+        self.clock = self._metric(layout, "", "--:--")
         self.meta = QLabel()
         self.meta.hide()
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.refresh)
         self.timer.start(1_000)
+        self.retranslate()
         self.refresh()
 
-    @staticmethod
-    def _metric(parent: QHBoxLayout, title: str, value: str) -> QLabel:
+    def _metric(self, parent: QHBoxLayout, title: str, value: str) -> QLabel:
         column = QVBoxLayout()
         heading = QLabel(title)
         heading.setObjectName("sectionLabel")
+        self.metric_headings.append(heading)
         label = QLabel(value)
         label.setObjectName("headerValue")
         column.addWidget(heading)
@@ -50,8 +53,8 @@ class Header(QFrame):
         return label
 
     def set_status(self, camera: str, model: str) -> None:
-        self._camera_status = camera
-        self._model_status = model
+        self._camera_status_key = camera
+        self._model_status_key = model
         self.refresh()
 
     def set_exercise(self, exercise: str) -> None:
@@ -67,7 +70,16 @@ class Header(QFrame):
             self.workout_timer.setText(value)
 
     def refresh(self) -> None:
-        self.camera.setText(self._camera_status)
-        self.model.setText(self._model_status)
+        camera_status = tr(self._camera_status_key)
+        model_status = tr(self._model_status_key)
+        self.camera.setText(camera_status)
+        self.model.setText(model_status)
         self.clock.setText(f"{datetime.now():%H:%M}")
-        self.meta.setText(f"{self._camera_status} • {self._model_status} • {datetime.now():%H:%M}")
+        self.meta.setText(f"{camera_status} • {model_status} • {datetime.now():%H:%M}")
+
+    def retranslate(self) -> None:
+        self.title.setText(tr("app.title").upper())
+        headings = ("camera.label", "model.label", "performance.label", "time.label", "now.label")
+        for label, key in zip(self.metric_headings, headings):
+            label.setText(tr(key))
+        self.refresh()

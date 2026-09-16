@@ -10,8 +10,8 @@ log = get_logger(__name__)
 
 
 class Camera:
-    def __init__(self, index: int = 0) -> None:
-        self.index, self._capture = index, None
+    def __init__(self, index: int | None = None) -> None:
+        self.index, self._capture = SETTINGS.camera_index if index is None else index, None
 
     def open(self) -> None:
         import cv2

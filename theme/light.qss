@@ -14,7 +14,7 @@ QLabel#guideIllustration { min-height:100px; background:#f8fafc; color:#64748b; 
 QPushButton { min-height:22px; background:#e2e8f0; border:1px solid #cbd5e1; border-radius:10px; padding:9px 13px; }
 QPushButton#primaryButton { background:#2563eb; color:#fff; }
 QPushButton:disabled { color:#94a3b8; background:#e2e8f0; }
-QComboBox, QSpinBox { min-height:20px; background:#fff; border:1px solid #cbd5e1; border-radius:9px; padding:8px; }
+QComboBox, QSpinBox, QDoubleSpinBox, QLineEdit, QTableWidget { min-height:20px; background:#fff; border:1px solid #cbd5e1; border-radius:9px; padding:8px; }
 QTabWidget#mainTabs::pane { border:0; }
 QTabBar::tab { padding:9px 20px; color:#64748b; }
 QTabBar::tab:selected { color:#2563eb; border-bottom:2px solid #2563eb; }

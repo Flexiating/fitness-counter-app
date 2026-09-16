@@ -8,7 +8,7 @@ import org.junit.Test
 
 class DetectorRegistryTest {
     @Test fun everyExerciseHasAnIndependentDetector() {
-        val registry = DetectorRegistry(PushUpDetector(), CrunchDetector(), SquatDetector(), PlankDetector(), LungeDetector())
+        val registry = DetectorRegistry(PushUpDetector(), CrunchDetector())
         val pushUp = registry.select(ExerciseType.PUSH_UP)
         val crunch = registry.select(ExerciseType.CRUNCH)
         assertNotSame(pushUp, crunch)
@@ -17,4 +17,3 @@ class DetectorRegistryTest {
         assertEquals(ExerciseType.PUSH_UP, registry.select(ExerciseType.PUSH_UP).type)
     }
 }
-

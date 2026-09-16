@@ -2,19 +2,19 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QDialog, QGridLayout, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
 
 from app.ui.workout_metrics import WorkoutSnapshot, speed_label
+from app.ui.translations import tr
 
 
 class WorkoutSummaryDialog(QDialog):
     new_session_requested = Signal()
-    save_requested = Signal()
 
     def __init__(self, exercise: str, snapshot: WorkoutSnapshot, parent=None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Hoàn thành buổi tập")
+        self.setWindowTitle(tr("dialog.completed"))
         self.setModal(False)
         self.setMinimumWidth(500)
         root = QVBoxLayout(self)
-        title = QLabel("HOÀN THÀNH BUỔI TẬP")
+        title = QLabel(tr("dialog.completed").upper())
         title.setObjectName("dialogTitle")
         subtitle = QLabel(exercise)
         subtitle.setObjectName("muted")
@@ -23,11 +23,11 @@ class WorkoutSummaryDialog(QDialog):
 
         grid = QGridLayout()
         values = (
-            ("Số lần", str(snapshot.repetitions)),
-            ("Thời gian", f"{int(snapshot.duration)//60:02}:{int(snapshot.duration)%60:02}"),
-            ("Tốc độ trung bình", speed_label(snapshot.average_rep_seconds)),
-            ("Độ chính xác", f"{snapshot.accuracy:.0f}%"),
-            ("Chuỗi tốt nhất", str(snapshot.best_streak)),
+            (tr("history.reps"), str(snapshot.repetitions)),
+            (tr("history.duration"), f"{int(snapshot.duration)//60:02}:{int(snapshot.duration)%60:02}"),
+            (tr("metric.average_speed"), speed_label(snapshot.average_rep_seconds)),
+            (tr("metric.accuracy"), f"{snapshot.accuracy:.0f}%"),
+            (tr("history.best_posture"), f"{snapshot.best_form_score:.0f}%"),
         )
         for index, (name, value) in enumerate(values):
             label = QLabel(name)
@@ -39,17 +39,13 @@ class WorkoutSummaryDialog(QDialog):
         root.addLayout(grid)
 
         buttons = QHBoxLayout()
-        self.new_session = QPushButton("Buổi tập mới")
-        self.save = QPushButton("Lưu buổi tập")
-        self.close_button = QPushButton("Đóng")
+        self.new_session = QPushButton(tr("button.new_session"))
+        self.saved_label = QLabel(tr("button.saved"))
+        self.saved_label.setObjectName("muted")
+        self.close_button = QPushButton(tr("button.close"))
         self.new_session.clicked.connect(self.new_session_requested)
-        self.save.clicked.connect(self.save_requested)
         self.close_button.clicked.connect(self.close)
         buttons.addWidget(self.new_session)
-        buttons.addWidget(self.save)
+        buttons.addWidget(self.saved_label)
         buttons.addWidget(self.close_button)
         root.addLayout(buttons)
-
-    def mark_saved(self) -> None:
-        self.save.setText("Đã lưu")
-        self.save.setEnabled(False)

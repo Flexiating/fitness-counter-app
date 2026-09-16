@@ -107,7 +107,8 @@ running the relevant build command, using the same filename.
 ## New models, assets, fonts, and configuration
 
 Place new model files in `models/`, visual assets and fonts in `assets/`, and
-configuration under `app/config/`. `WorkoutTracker.spec` bundles all of these
+configuration under `app/config/`, and translations under `locales/`.
+`WorkoutTracker.spec` bundles all of these
 locations automatically. Read them at runtime through
 `app.utils.paths.resource_path()` so they work in development, the Windows
 executable, and the macOS bundle.

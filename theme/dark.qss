@@ -83,7 +83,7 @@ QPushButton:pressed { background:#1d4ed8; }
 QPushButton#primaryButton { background:#2563eb; border-color:#3b82f6; }
 QPushButton#primaryButton:hover { background:#3b82f6; }
 QPushButton:disabled { color:#59647a; background:#171a21; border-color:#232834; }
-QComboBox, QSpinBox {
+QComboBox, QSpinBox, QDoubleSpinBox, QLineEdit, QTableWidget {
     min-height:20px;
     background:#1d222c;
     border:1px solid #303746;
@@ -92,8 +92,8 @@ QComboBox, QSpinBox {
     color:#fff;
     selection-background-color:#2563eb;
 }
-QComboBox:focus, QSpinBox:focus { border-color:#60a5fa; }
-QComboBox:disabled, QSpinBox:disabled { color:#59647a; background:#171a21; }
+QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus, QLineEdit:focus { border-color:#60a5fa; }
+QComboBox:disabled, QSpinBox:disabled, QDoubleSpinBox:disabled, QLineEdit:disabled { color:#59647a; background:#171a21; }
 QCheckBox { spacing:8px; color:#cbd5e1; }
 QCheckBox::indicator { width:17px; height:17px; }
 QTabWidget#mainTabs::pane { border:0; background:transparent; }

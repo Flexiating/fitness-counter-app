@@ -16,7 +16,7 @@ class PushUpDetector @Inject constructor() : StatefulExerciseDetector(ExerciseTy
     override fun process(frame: PoseFrame): DetectorResult {
         val required = intArrayOf(11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28)
         val tracking = frame.averageVisibility(required)
-        if (!visible(frame, *required)) return result(false, tracking, "Show your full body and both arms", "Low landmark visibility")
+        if (!visible(frame, *required)) return result(false, tracking, "show_full_body_arms", "low_visibility")
 
         val leftElbow = PoseGeometry.angle(frame.landmark(11)!!, frame.landmark(13)!!, frame.landmark(15)!!)
         val rightElbow = PoseGeometry.angle(frame.landmark(12)!!, frame.landmark(14)!!, frame.landmark(16)!!)
@@ -32,9 +32,9 @@ class PushUpDetector @Inject constructor() : StatefulExerciseDetector(ExerciseTy
         val horizontal = PoseGeometry.bodyHorizontalDeviation(shoulder, ankle)
         val postureValid = hip >= 145f && knee >= 145f && horizontal <= 38f
         val rejection = when {
-            horizontal > 38f -> "Body is not in a plank position"
-            hip < 145f -> "Keep your hips aligned"
-            knee < 145f -> "Straighten your legs"
+            horizontal > 38f -> "pushup_position"
+            hip < 145f -> "hips_aligned"
+            knee < 145f -> "straighten_legs"
             else -> ""
         }
 
@@ -54,13 +54,12 @@ class PushUpDetector @Inject constructor() : StatefulExerciseDetector(ExerciseTy
                 if (frame.timestampMs - downStartedMs >= 300L) { count++; rep = true; lastRepMs = frame.timestampMs }
                 lastTransitionMs = frame.timestampMs; gate.clear()
             }
-            else -> Unit
         }
         val score = ((PoseGeometry.normalizedCloseness(hip, 175f, 40f) * 0.55f) +
             (PoseGeometry.normalizedCloseness(knee, 175f, 35f) * 0.25f) +
             ((100f - horizontal * 2f).coerceAtLeast(0f) * 0.20f)).toInt().coerceIn(0, 100)
         return DetectorResult(type, count, phase, postureValid, score, tracking,
-            if (postureValid) if (phase == ExercisePhase.DOWN) "Push back up" else "Lower your chest with control" else rejection,
+            if (postureValid) if (phase == ExercisePhase.DOWN) "push_back_up" else "lower_chest" else rejection,
             mapOf("Left elbow" to leftElbow, "Right elbow" to rightElbow, "Hip" to hip, "Knee" to knee),
             rejection, rep, detectorName = javaClass.simpleName)
     }
@@ -74,4 +73,3 @@ class PushUpDetector @Inject constructor() : StatefulExerciseDetector(ExerciseTy
         phase = ExercisePhase.WAITING; downStartedMs = 0L; elbowSmoother.reset(); hipSmoother.reset(); gate.clear()
     }
 }
-

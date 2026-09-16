@@ -34,7 +34,7 @@ class PushUpExercise(BaseExercise):
             SETTINGS.pushup_elbow_up,
             SETTINGS.pushup_hip_tolerance,
             SETTINGS.pushup_debounce_seconds,
-            SETTINGS.pushup_plank_max_orientation,
+            SETTINGS.pushup_body_orientation_limit,
         )
         self._selected_side: str | None = None
         self._visibility_ema: dict[LandmarkName, float] = {}

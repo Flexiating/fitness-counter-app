@@ -1,14 +1,8 @@
 package com.flexiating.workouttracker.model
 
-enum class ExerciseType(val title: String) {
-    PUSH_UP("Push-up"),
-    CRUNCH("Crunch"),
-    SQUAT("Squat"),
-    PLANK("Plank"),
-    LUNGE("Lunge")
-}
+enum class ExerciseType { PUSH_UP, CRUNCH }
 
-enum class ExercisePhase { WAITING, READY, UP, DOWN, HOLDING }
+enum class ExercisePhase { WAITING, READY, UP, DOWN }
 
 data class Landmark3D(
     val x: Float,
@@ -73,7 +67,6 @@ data class DetectorResult(
     val angles: Map<String, Float> = emptyMap(),
     val rejectionReason: String = "",
     val repCompleted: Boolean = false,
-    val holdSeconds: Int = 0,
     val detectorName: String = ""
 )
 
@@ -85,7 +78,8 @@ data class WorkoutSettings(
     val debugMode: Boolean = false,
     val soundEnabled: Boolean = true,
     val vibrationEnabled: Boolean = true,
-    val language: String = "English"
+    val language: String = "en",
+    val targetReps: Int = 20
 )
 
 data class WorkoutUiState(
@@ -97,7 +91,7 @@ data class WorkoutUiState(
         postureValid = false,
         formScore = 0,
         trackingConfidence = 0f,
-        feedback = "Move into the camera frame"
+        feedback = "move_into_frame"
     ),
     val poseFrame: PoseFrame? = null,
     val fps: Float = 0f,

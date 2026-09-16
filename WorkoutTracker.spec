@@ -6,7 +6,7 @@ from __future__ import annotations
 import platform
 from pathlib import Path
 
-from PyInstaller.utils.hooks import collect_all
+from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs
 
 
 ROOT = Path(SPECPATH).resolve()
@@ -17,13 +17,14 @@ IS_MACOS = platform.system() == "Darwin"
 def package_contents(package: str):
     """Collect dynamic libraries and data required by packages with lazy imports."""
     try:
-        return collect_all(package)
+        return collect_data_files(package), collect_dynamic_libs(package), []
     except Exception:
         return [], [], []
 
 
 datas = [
     (str(ROOT / "theme"), "theme"),
+    (str(ROOT / "locales"), "locales"),
     (str(ROOT / "assets"), "assets"),
     (str(ROOT / "models"), "models"),
     (str(ROOT / "icons"), "icons"),
@@ -34,6 +35,9 @@ hiddenimports = [
     "PySide6.QtCore",
     "PySide6.QtGui",
     "PySide6.QtWidgets",
+    "cv2",
+    "numpy",
+    "mediapipe",
     "mediapipe.python.solutions.pose",
     "mediapipe.python.solutions.drawing_utils",
     "mediapipe.python.solutions.drawing_styles",

@@ -3,6 +3,7 @@ from PySide6.QtGui import QImage
 from app.ui.camera_widget import CameraWidget
 from app.ui.main_window import CameraWorker, MainWindow
 from app.ui.workout_metrics import LiveWorkoutMetrics
+from app.ui.translations import tr
 
 
 def test_camera_hud_countdown_and_stopped_state() -> None:
@@ -22,7 +23,7 @@ def test_camera_hud_countdown_and_stopped_state() -> None:
     assert widget.pixmap().isNull()
     assert not widget.hud_info.isVisible()
     assert not widget.hud_timer.isVisible()
-    assert "Camera Stopped" in widget.text()
+    assert tr("camera.stopped") in widget.text()
 
 
 def test_live_workout_metrics_tracks_speed_and_quality() -> None:
@@ -48,7 +49,7 @@ def test_dashboard_exposes_goals_tabs_and_shortcuts() -> None:
     window._goals_changed(10, 2)
 
     assert window.tabs.count() == 4
-    assert window.tabs.tabText(2) == "Hướng dẫn"
+    assert window.tabs.tabText(2) == tr("tab.guide")
     assert len(window._shortcuts) == 4
     assert window.workout_status.goal_progress.maximum() == 10
     assert "10" in window.workout_status.goal_value.text()

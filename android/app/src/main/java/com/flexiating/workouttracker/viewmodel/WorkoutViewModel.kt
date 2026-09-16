@@ -41,6 +41,8 @@ class WorkoutViewModel @Inject constructor(
     private val _state = MutableStateFlow(WorkoutUiState())
     val state: StateFlow<WorkoutUiState> = _state.asStateFlow()
     private var sessionStartMs = 0L
+    private var sessionStartEpochMs = 0L
+    private var sessionFinalized = false
     private var timerJob: Job? = null
     private var lastFrameMs = 0L
     private var fpsSmoothed = 0f
@@ -48,6 +50,8 @@ class WorkoutViewModel @Inject constructor(
     private var scoreSamples = 0
     private var fpsTotal = 0.0
     private var fpsSamples = 0
+    private var trackingTotal = 0.0
+    private var trackingSamples = 0
     private val tone = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 65)
 
     init {
@@ -58,6 +62,14 @@ class WorkoutViewModel @Inject constructor(
     }
 
     fun startCamera(owner: LifecycleOwner, surfaceProvider: Preview.SurfaceProvider) {
+        if (sessionFinalized) {
+            detectors.resetCurrent()
+            val type = _state.value.exercise
+            _state.value = _state.value.copy(elapsedMs = 0L,
+                result = DetectorResult(type, 0, ExercisePhase.WAITING, false, 0, 0f, "ready", detectorName = detectors.current().javaClass.simpleName))
+            resetStats()
+            sessionFinalized = false
+        }
         val current = _state.value
         camera.start(owner, surfaceProvider, current.settings.useFrontCamera, current.settings.targetFps,
             onFrame = poseEngine::detect,
@@ -66,6 +78,7 @@ class WorkoutViewModel @Inject constructor(
     }
 
     fun stopCamera() {
+        stopSession(save = true)
         camera.stop()
         _state.value = _state.value.copy(cameraRunning = false)
     }
@@ -93,17 +106,17 @@ class WorkoutViewModel @Inject constructor(
         _state.value = _state.value.copy(
             exercise = type,
             elapsedMs = 0L,
-            result = DetectorResult(type, 0, ExercisePhase.WAITING, false, 0, 0f, "Move into the camera frame", detectorName = detectors.current().javaClass.simpleName)
+            result = DetectorResult(type, 0, ExercisePhase.WAITING, false, 0, 0f, "move_into_frame", detectorName = detectors.current().javaClass.simpleName)
         )
         resetStats()
     }
 
     fun resetWorkout() {
-        stopSession(save = false)
+        stopSession(save = true)
         detectors.resetCurrent()
         val type = _state.value.exercise
         _state.value = _state.value.copy(elapsedMs = 0L,
-            result = DetectorResult(type, 0, ExercisePhase.WAITING, false, 0, 0f, "Ready", detectorName = detectors.current().javaClass.simpleName))
+            result = DetectorResult(type, 0, ExercisePhase.WAITING, false, 0, 0f, "ready", detectorName = detectors.current().javaClass.simpleName))
         resetStats()
     }
 
@@ -121,6 +134,7 @@ class WorkoutViewModel @Inject constructor(
         }
         scoreTotal += result.formScore; scoreSamples++
         fpsTotal += fpsSmoothed; fpsSamples++
+        trackingTotal += result.trackingConfidence; trackingSamples++
         _state.value = _state.value.copy(result = result, poseFrame = frame, fps = fpsSmoothed, cameraError = null)
     }
 
@@ -128,11 +142,11 @@ class WorkoutViewModel @Inject constructor(
         _state.value = _state.value.copy(cameraError = message)
     }
 
-    fun saveCurrentSession() = stopSession(save = true)
-
     private fun startSession() {
         if (sessionStartMs != 0L) return
         sessionStartMs = SystemClock.elapsedRealtime()
+        sessionStartEpochMs = System.currentTimeMillis()
+        sessionFinalized = false
         timerJob = viewModelScope.launch {
             while (sessionStartMs != 0L) {
                 _state.value = _state.value.copy(elapsedMs = SystemClock.elapsedRealtime() - sessionStartMs)
@@ -143,20 +157,26 @@ class WorkoutViewModel @Inject constructor(
 
     private fun stopSession(save: Boolean) {
         val started = sessionStartMs
+        val startedEpoch = sessionStartEpochMs
         val snapshot = _state.value
         sessionStartMs = 0L
+        sessionStartEpochMs = 0L
         timerJob?.cancel(); timerJob = null
         if (save && started != 0L && snapshot.result.count > 0) {
             viewModelScope.launch {
                 workoutRepository.save(WorkoutSessionEntity(
                     exercise = snapshot.exercise.name,
-                    dateEpochMs = System.currentTimeMillis(),
+                    dateEpochMs = startedEpoch.takeIf { it > 0L } ?: System.currentTimeMillis() - snapshot.elapsedMs,
                     reps = snapshot.result.count,
                     durationMs = snapshot.elapsedMs,
                     averageFormScore = if (scoreSamples == 0) 0f else scoreTotal.toFloat() / scoreSamples,
-                    averageFps = if (fpsSamples == 0) 0f else (fpsTotal / fpsSamples).toFloat()
+                    averageFps = if (fpsSamples == 0) 0f else (fpsTotal / fpsSamples).toFloat(),
+                    endEpochMs = System.currentTimeMillis(),
+                    averageTrackingConfidence = if (trackingSamples == 0) 0f else (trackingTotal / trackingSamples).toFloat(),
+                    targetReached = snapshot.result.count >= snapshot.settings.targetReps
                 ))
             }
+            sessionFinalized = true
         }
     }
 
@@ -172,7 +192,8 @@ class WorkoutViewModel @Inject constructor(
     }
 
     private fun resetStats() {
-        scoreTotal = 0; scoreSamples = 0; fpsTotal = 0.0; fpsSamples = 0; lastFrameMs = 0; fpsSmoothed = 0f
+        scoreTotal = 0; scoreSamples = 0; fpsTotal = 0.0; fpsSamples = 0
+        trackingTotal = 0.0; trackingSamples = 0; lastFrameMs = 0; fpsSmoothed = 0f
     }
 
     override fun onCleared() {

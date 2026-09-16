@@ -1,100 +1,136 @@
-"""Vietnamese labels and display-only translations for the interface."""
+"""JSON-backed runtime localization for the desktop application."""
 
-EXERCISE_NAMES = {
-    "Push Up": "Chống đẩy",
-    "Crunch": "Gập bụng",
-}
+from __future__ import annotations
 
-STATE_NAMES = {
-    "INITIALIZING": "Đang khởi tạo",
-    "NO PERSON": "Chưa phát hiện người",
-    "WAITING": "Đang chờ",
-    "UP": "LÊN",
-    "DOWN": "XUỐNG",
-    "READY": "SẴN SÀNG",
-    "RUNNING": "ĐANG TẬP",
-    "PAUSED": "ĐÃ TẠM DỪNG",
-    "FINISHED": "ĐÃ HOÀN THÀNH",
-}
+import json
+from pathlib import Path
+from typing import Any
 
-JOINT_NAMES = {
-    "Left elbow": "Khuỷu tay trái",
-    "Right elbow": "Khuỷu tay phải",
-    "Left shoulder": "Vai trái",
-    "Right shoulder": "Vai phải",
-    "Left hip": "Hông trái",
-    "Right hip": "Hông phải",
-    "Left knee": "Gối trái",
-    "Right knee": "Gối phải",
-}
+from PySide6.QtCore import QObject, Signal
 
-STATUS_TEXT = {
-    "Opening camera": "Đang mở camera",
-    "Loading pose detector": "Đang tải bộ nhận diện tư thế",
-    "Ready": "Sẵn sàng",
-    "No person detected": "Chưa phát hiện người",
-    "Camera frame unavailable. Check the camera connection.": "Không nhận được hình ảnh từ camera. Hãy kiểm tra kết nối camera.",
-    "Camera unavailable. Check the connection and camera permission.": "Không thể sử dụng camera. Hãy kiểm tra kết nối và quyền truy cập camera.",
-    "Pose model failed to load. Restart the app or reinstall the dependencies.": "Không tải được mô hình tư thế. Hãy khởi động lại ứng dụng hoặc cài lại thư viện.",
-    "Camera processing stopped unexpectedly. Press Start Camera to retry.": "Xử lý camera đã dừng ngoài dự kiến. Hãy nhấn Bật camera để thử lại.",
-    "Exercise module failed": "Không tải được mô-đun bài tập",
-    "Details": "Chi tiết",
-    "Move into camera view": "Hãy di chuyển vào khung hình camera",
-    "Move farther from the camera": "Hãy lùi xa camera hơn",
-    "Posture: GOOD": "Tư thế: TỐT",
-    "Posture: BAD": "Tư thế: CHƯA ĐÚNG",
-    "Movement between thresholds": "Chuyển động chưa đủ biên độ",
-    "Body not visible": "Không nhìn thấy rõ cơ thể",
-    "Only one arm detected or body not visible": "Chỉ phát hiện một tay hoặc không thấy rõ cơ thể",
-    "Hips too high or too low": "Hông quá cao hoặc quá thấp",
-    "Not in plank position (standing or walking)": "Chưa ở tư thế plank (đang đứng hoặc đi lại)",
-    "Body not visible or tracking lost": "Không thấy rõ cơ thể hoặc mất theo dõi",
-    "Standing, sitting, walking, or body rotated": "Đang đứng, ngồi, đi lại hoặc cơ thể xoay quá nhiều",
-    "Partial crunch ignored": "Bỏ qua lần gập bụng chưa đủ biên độ",
-    "Rep rejected: too fast": "Lần lặp bị bỏ qua: quá nhanh",
-    "OK": "Ổn",
-}
+from app.utils.paths import resource_path
+
+
+class LocalizationManager(QObject):
+    language_changed = Signal(str)
+
+    def __init__(self, language: str = "en", locale_dir: Path | None = None) -> None:
+        super().__init__()
+        self.locale_dir = locale_dir or resource_path("locales")
+        self._catalogs = {
+            code: json.loads((self.locale_dir / f"{code}.json").read_text(encoding="utf-8"))
+            for code in ("en", "vi")
+        }
+        self._language = language if language in self._catalogs else "en"
+
+    @property
+    def language(self) -> str:
+        return self._language
+
+    def set_language(self, language: str) -> None:
+        language = language if language in self._catalogs else "en"
+        if language != self._language:
+            self._language = language
+            self.language_changed.emit(language)
+
+    def text(self, key: str, **values: Any) -> str:
+        template = self._catalogs[self._language].get(key)
+        if template is None:
+            template = self._catalogs["en"].get(key, key)
+        try:
+            return str(template).format(**values)
+        except (KeyError, ValueError):
+            return str(template)
+
+
+_manager: LocalizationManager | None = None
+
+
+def initialize_localization(language: str = "en") -> LocalizationManager:
+    global _manager
+    _manager = LocalizationManager(language)
+    return _manager
+
+
+def localization() -> LocalizationManager:
+    global _manager
+    if _manager is None:
+        _manager = LocalizationManager()
+    return _manager
+
+
+def tr(key: str, **values: Any) -> str:
+    return localization().text(key, **values)
 
 
 def translate_exercise(name: str) -> str:
-    return EXERCISE_NAMES.get(name, name)
+    return tr("exercise.push_up" if name in {"Push Up", "Push-up", "push_up", "PUSH_UP"} else "exercise.crunch")
 
 
 def translate_state(state: str) -> str:
-    return STATE_NAMES.get(state, state)
+    return tr(f"state.{state.lower().replace(' ', '_')}")
+
+
+_STATUS_KEYS = {
+    "Opening camera": "status.opening_camera",
+    "Loading pose detector": "status.loading_detector",
+    "Ready": "status.ready",
+    "No person detected": "status.no_person",
+    "Move into camera view": "status.move_into_view",
+    "Move farther from the camera": "status.move_farther",
+    "Posture: GOOD": "status.posture_good",
+    "Posture: BAD": "status.posture_bad",
+    "Movement between thresholds": "status.between_thresholds",
+    "Body not visible": "status.body_not_visible",
+    "Only one arm detected or body not visible": "status.arm_or_body_missing",
+    "Hips too high or too low": "status.hips_alignment",
+    "Not in push-up position (standing or walking)": "status.not_pushup_position",
+    "Body not visible or tracking lost": "status.tracking_lost",
+    "Standing, sitting, walking, or body rotated": "status.wrong_orientation",
+    "Partial crunch ignored": "status.partial_crunch",
+    "Rep rejected: too fast": "status.too_fast",
+    "Camera frame unavailable. Check the camera connection.": "status.camera_frame_error",
+    "Camera unavailable. Check the connection and camera permission.": "status.camera_unavailable",
+    "Pose model failed to load. Restart the app or reinstall the dependencies.": "status.model_failed",
+    "Camera processing stopped unexpectedly. Press Start Camera to retry.": "status.processing_stopped",
+    "Details": "status.details",
+    "No complete body side detected": "status.body_side_missing",
+    "Required joints unavailable": "status.joints_missing",
+    "No complete arm and body side detected": "status.arm_side_missing",
+    "No sufficiently visible arm and body side": "status.arm_side_missing",
+    "Whole body is not inside the frame": "status.full_body_frame",
+    "Posture score below safe push-up range": "status.pushup_form_low",
+    "Keep your full body inside the frame": "status.full_body_frame",
+    "Move slightly farther from the camera": "status.move_farther",
+    "Turn sideways to the camera": "status.turn_sideways",
+    "Standing, sitting, or walking is not a crunch position": "status.crunch_position",
+    "Standing or sitting is not a crunch position": "status.crunch_position",
+    "Lift your shoulders higher.": "status.lift_shoulders",
+    "Good lift. Lower your shoulders with control.": "status.lower_shoulders",
+    "Good crunch.": "status.good_crunch",
+    "Move more slowly.": "status.move_slowly",
+    "Complete the full range of motion.": "status.full_range",
+    "Avoid pulling your neck.": "status.neutral_neck",
+    "Keep your lower back on the floor.": "status.lower_back",
+    "Lie back fully before starting.": "status.lie_back",
+    "Lower your shoulders with control.": "status.lower_shoulders",
+    "Ready for the next crunch.": "status.next_crunch",
+    "Good torso lift.": "status.good_lift",
+}
 
 
 def translate_status(status: str) -> str:
     translated = status
-    for source, target in STATUS_TEXT.items():
-        translated = translated.replace(source, target)
-    return translated
+    for source, key in _STATUS_KEYS.items():
+        translated = translated.replace(source, tr(key))
+    return translated.replace("Form score", tr("status.form_score"))
 
 
 def translate_joint(name: str) -> str:
-    return JOINT_NAMES.get(name, name)
+    key = "joint." + name.lower().replace(" ", "_").replace("-", "_")
+    value = tr(key)
+    return name if value == key else value
 
 
 def translate_debug(text: str) -> str:
-    """Translate display text without changing the exercise counters' data."""
-    replacements = {
-        "Push-up debug": "Gỡ lỗi chống đẩy",
-        "state": "trạng thái",
-        "last transition": "chuyển trạng thái gần nhất",
-        "thresholds": "ngưỡng",
-        "down": "xuống",
-        "up": "lên",
-        "hip tolerance": "dung sai hông",
-        "rejected": "bị từ chối",
-        "none": "không có",
-        "Joint angles": "Góc khớp",
-        "no pose detected": "chưa phát hiện tư thế",
-    }
-    translated = translate_status(text)
-    for source, target in replacements.items():
-        translated = translated.replace(source, target)
-    for source, target in JOINT_NAMES.items():
-        translated = translated.replace(source, target)
-    for source, target in STATE_NAMES.items():
-        translated = translated.replace(source, target)
-    return translated
+    return translate_status(text)

@@ -87,12 +87,10 @@ After dependencies are installed:
 python -m pytest
 ```
 
-## Add an exercise
+## Supported exercises
 
-1. Create `app/exercises/squat.py` inheriting `BaseExercise`.
-2. Declare required named landmarks and compute angles with `calculate_angle`.
-3. Feed stable `MovementState` values into a `RepetitionCounter`.
-4. Register it in `ExerciseManager` and add its thresholds to `settings.py`.
+The application intentionally supports Push-up and Crunch. Their independent
+detectors are registered through `ExerciseManager`.
 
 ## Replace the pose model
 

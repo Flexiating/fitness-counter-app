@@ -39,10 +39,10 @@ class PushUpCounter:
 
     def __init__(self, elbow_down: float = 70.0, elbow_up: float = 160.0,
                  hip_tolerance: float = 25.0, debounce_seconds: float = .2,
-                 plank_max_orientation: float = 35.0) -> None:
+                 body_orientation_limit: float = 35.0) -> None:
         self.elbow_down, self.elbow_up = elbow_down, elbow_up
         self.hip_tolerance, self.debounce_seconds = hip_tolerance, debounce_seconds
-        self.plank_max_orientation = plank_max_orientation
+        self.body_orientation_limit = body_orientation_limit
         self.reset()
 
     def reset(self) -> None:
@@ -157,9 +157,9 @@ class PushUpCounter:
         if body_size is not None and body_size > .98:
             return False, f"Body occupies {body_size:.0%} of frame; move slightly farther away"
 
-        orientation_limit = self.plank_max_orientation + 12.0
+        orientation_limit = self.body_orientation_limit + 12.0
         if angles["Body orientation"] > orientation_limit:
-            return False, "Not in plank position (standing or walking)"
+            return False, "Not in push-up position (standing or walking)"
 
         # Hip and back alignment are graded by the form score. Only clearly
         # folded posture is rejected, allowing natural anatomy and camera angle.

@@ -49,7 +49,7 @@ def test_single_frame_oscillation_and_partial_movement_do_not_count() -> None:
     assert counter.state is PushUpState.UP
 
 
-def test_best_visible_side_is_enough_but_bad_plank_is_rejected() -> None:
+def test_best_visible_side_is_enough_but_bad_body_alignment_is_rejected() -> None:
     counter = PushUpCounter()
     bilateral_angles = {
         "Left elbow": 165.0,

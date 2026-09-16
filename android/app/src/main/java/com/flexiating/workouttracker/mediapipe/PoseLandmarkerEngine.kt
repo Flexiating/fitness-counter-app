@@ -2,6 +2,7 @@ package com.flexiating.workouttracker.mediapipe
 
 import android.content.Context
 import android.graphics.Bitmap
+import androidx.core.graphics.createBitmap
 import android.graphics.Matrix
 import android.os.SystemClock
 import androidx.camera.core.ImageProxy
@@ -54,7 +55,7 @@ class PoseLandmarkerEngine @Inject constructor(
         ensureInitialized()
         val timestamp = SystemClock.uptimeMillis()
         val rotation = imageProxy.imageInfo.rotationDegrees
-        val bitmap = Bitmap.createBitmap(imageProxy.width, imageProxy.height, Bitmap.Config.ARGB_8888)
+        val bitmap = createBitmap(imageProxy.width, imageProxy.height, Bitmap.Config.ARGB_8888)
         try {
             bitmap.copyPixelsFromBuffer(imageProxy.planes[0].buffer)
         } finally {

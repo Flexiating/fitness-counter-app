@@ -8,8 +8,8 @@ import numpy as np
 from PySide6.QtCore import QEventLoop, QTimer
 from PySide6.QtGui import QImage
 
-from app.data.storage import WorkoutStorage
-from app.data.workout import Workout
+from app.data.history import HistoryRepository
+from app.ui.translations import tr
 from app.timer.session_timer import TimerState
 from app.timer.timer_controller import TimerController
 from app.ui.camera_widget import CameraWidget
@@ -64,7 +64,7 @@ def test_stop_is_non_blocking_and_clears_preview(monkeypatch) -> None:
     elapsed = monotonic() - started
 
     assert elapsed < 0.1
-    assert "Camera Stopped" in window.camera_view.text()
+    assert tr("camera.stopped") in window.camera_view.text()
     assert window.camera_view.pixmap().isNull()
     finish_worker(window)
     assert window.worker is None
@@ -121,7 +121,7 @@ def test_stopped_camera_rejects_queued_stale_frames() -> None:
     widget.show_stopped()
     widget.set_frame(image)
     assert widget.pixmap().isNull()
-    assert "Camera Stopped" in widget.text()
+    assert tr("camera.stopped") in widget.text()
 
 
 def test_ui_import_does_not_eagerly_import_native_vision_libraries() -> None:
@@ -151,16 +151,6 @@ def test_countdown_and_pause_transitions(monkeypatch) -> None:
     assert finished == [1.0]
 
 
-def test_storage_rejects_corrupt_json_without_overwriting_it(tmp_path) -> None:
-    path = tmp_path / "workouts.json"
-    path.write_text("not json", encoding="utf-8")
-    storage = WorkoutStorage(path)
-    workout = Workout("Push Up", 1, "start", "end", 1.0)
-
-    try:
-        storage.append(workout)
-    except ValueError:
-        pass
-    else:
-        raise AssertionError("Corrupt workout history must not be overwritten")
-    assert path.read_text(encoding="utf-8") == "not json"
+def test_history_uses_sqlite_storage(tmp_path) -> None:
+    storage = HistoryRepository(tmp_path / "history.sqlite3")
+    assert storage.list() == []

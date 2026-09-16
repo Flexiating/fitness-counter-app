@@ -16,3 +16,5 @@ release/*
 *.spec
 !WorkoutTracker.spec
 icons/*.iconset/
+android/.kotlin/
+android/.gradle/

@@ -24,7 +24,7 @@ class CrunchDetector @Inject constructor() : StatefulExerciseDetector(ExerciseTy
         val tracking = maxOf(leftVisibility, rightVisibility)
         if (listOf(ear, shoulder, hip, knee).any { it == null || it.visibility < visibilityThreshold }) {
             phase = ExercisePhase.WAITING
-            return result(tracking, "Lie sideways to the camera with your torso visible", "Required crunch landmarks are not visible")
+            return result(tracking, "crunch_sideways", "crunch_landmarks_missing")
         }
         val torsoAngle = torsoSmoother.update(PoseGeometry.angle(shoulder!!, hip!!, knee!!))
         val neckAngle = PoseGeometry.angle(ear!!, shoulder, hip)
@@ -37,9 +37,9 @@ class CrunchDetector @Inject constructor() : StatefulExerciseDetector(ExerciseTy
         val rotated = abs(frame.landmark(11)!!.z - frame.landmark(12)!!.z) > 0.28f
         val valid = !standing && !rotated
         val rejection = when {
-            standing -> "Lie down before starting crunches"
-            rotated -> "Keep your body side-on and avoid twisting"
-            !lying && !curled && phase == ExercisePhase.WAITING -> "Extend your torso to the start position"
+            standing -> "lie_down"
+            rotated -> "avoid_twisting"
+            !lying && !curled && phase == ExercisePhase.WAITING -> "extend_torso"
             else -> ""
         }
 
@@ -58,7 +58,6 @@ class CrunchDetector @Inject constructor() : StatefulExerciseDetector(ExerciseTy
                 if (frame.timestampMs - liftedAt >= 300L) { count++; rep = true; lastRepMs = frame.timestampMs }
                 gate.clear(); lastTransitionMs = frame.timestampMs
             }
-            else -> Unit
         }
         val rangeScore = when {
             phase == ExercisePhase.UP -> PoseGeometry.normalizedCloseness(torsoAngle, 90f, 45f)
@@ -68,10 +67,10 @@ class CrunchDetector @Inject constructor() : StatefulExerciseDetector(ExerciseTy
         val score = (rangeScore * 0.7f + neckScore * 0.3f).toInt().coerceIn(0, 100)
         val feedback = when {
             !valid -> rejection
-            neckAngle < 105f -> "Keep your neck neutral; do not pull your head"
-            phase == ExercisePhase.UP -> "Lower your shoulders with control"
-            phase == ExercisePhase.READY || phase == ExercisePhase.DOWN -> "Lift your shoulders toward your knees"
-            else -> "Set up in the starting position"
+            neckAngle < 105f -> "neutral_neck"
+            phase == ExercisePhase.UP -> "lower_shoulders"
+            phase == ExercisePhase.READY || phase == ExercisePhase.DOWN -> "lift_shoulders"
+            else -> "starting_position"
         }
         return DetectorResult(type, count, phase, valid, score, tracking, feedback,
             mapOf("Torso flexion" to torsoAngle, "Neck" to neckAngle, "Shoulder-knee ratio" to shoulderToKnee),
@@ -87,4 +86,3 @@ class CrunchDetector @Inject constructor() : StatefulExerciseDetector(ExerciseTy
         phase = ExercisePhase.WAITING; liftedAt = 0L; torsoSmoother.reset(); gate.clear()
     }
 }
-

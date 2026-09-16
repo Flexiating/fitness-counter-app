@@ -3,6 +3,7 @@ from __future__ import annotations
 from PySide6.QtCore import QEasingCurve, QPropertyAnimation, QRect, Qt, Slot
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel
+from app.ui.translations import tr
 
 
 class CameraWidget(QLabel):
@@ -47,7 +48,7 @@ class CameraWidget(QLabel):
         self._first_frame_pending = False
         self._accept_frames = False
         self.clear()
-        self.setText("📷\n\nCamera Stopped\nPress Start Camera to Continue")
+        self.setText(f"📷\n\n{tr('camera.stopped')}\n{tr('camera.press_start')}")
         self._set_hud_visible(False)
         self.countdown.hide()
 
@@ -58,7 +59,7 @@ class CameraWidget(QLabel):
         self._first_frame_pending = True
         self._accept_frames = True
         self.clear()
-        self.setText("📷\n\nĐang khởi động camera...")
+        self.setText(f"📷\n\n{tr('camera.starting')}")
         self._set_hud_visible(False)
         self.countdown.hide()
 
@@ -83,11 +84,16 @@ class CameraWidget(QLabel):
         if payload == self._last_hud:
             return
         self._last_hud = payload
-        self.hud_info.setText(f"{exercise}\n{state}\n{repetitions} lần")
+        self.hud_info.setText(f"{exercise}\n{state}\n{tr('metric.reps', value=repetitions)}")
         self.hud_metrics.setText(
-            f"{round(fps)} FPS\nTheo dõi {round(tracking)}%\nForm {round(form_score)}%"
+            f"{round(fps)} FPS\n{tr('metric.tracking', value=round(tracking))}\n{tr('metric.form', value=round(form_score))}"
         )
         self.hud_timer.setText(f"⏱  {timer}")
+
+    def retranslate(self) -> None:
+        if not self._accept_frames:
+            self.show_stopped()
+        self._last_hud = None
 
     def show_countdown(self, value: str | None) -> None:
         if value is None:

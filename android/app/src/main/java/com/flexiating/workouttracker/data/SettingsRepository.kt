@@ -23,6 +23,7 @@ class SettingsRepository @Inject constructor(@param:ApplicationContext private v
         val sound = booleanPreferencesKey("sound")
         val vibration = booleanPreferencesKey("vibration")
         val language = stringPreferencesKey("language")
+        val targetReps = intPreferencesKey("target_reps")
     }
 
     val settings: Flow<WorkoutSettings> = context.settingsStore.data.map { p ->
@@ -34,7 +35,8 @@ class SettingsRepository @Inject constructor(@param:ApplicationContext private v
             debugMode = p[Keys.debug] ?: false,
             soundEnabled = p[Keys.sound] ?: true,
             vibrationEnabled = p[Keys.vibration] ?: true,
-            language = p[Keys.language] ?: "English"
+            language = p[Keys.language] ?: "en",
+            targetReps = p[Keys.targetReps] ?: 20
         )
     }
 
@@ -43,5 +45,6 @@ class SettingsRepository @Inject constructor(@param:ApplicationContext private v
         it[Keys.showFps] = value.showFps
         it[Keys.debug] = value.debugMode; it[Keys.sound] = value.soundEnabled
         it[Keys.vibration] = value.vibrationEnabled; it[Keys.language] = value.language
+        it[Keys.targetReps] = value.targetReps
     }
 }
