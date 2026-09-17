@@ -1,4 +1,6 @@
 {
+  "ui.day": "{value} ngày",
+  "ui.weekly_activity": "7 ngày gần nhất", "ui.personal_best": "Buổi tập tốt nhất", "ui.streak": "Chuỗi ngày tập", "ui.days": "{value} ngày", "ui.camera_off": "Camera đang tắt",
   "app.title": "Bộ theo dõi tập luyện AI",
   "tab.workout": "Tập luyện", "tab.history": "Lịch sử", "tab.guide": "Hướng dẫn", "tab.settings": "Cài đặt",
   "exercise.push_up": "Chống đẩy", "exercise.crunch": "Gập bụng", "exercise.label": "BÀI TẬP",

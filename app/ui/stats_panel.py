@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout
 from app.ui.translations import tr
+from app.ui.design import HoverFrame as QFrame, AnimatedLabel
 
 
 class StatsPanel(QFrame):
@@ -23,7 +24,7 @@ class StatsPanel(QFrame):
             card_layout.setContentsMargins(12, 10, 12, 10)
             label = QLabel()
             label.setObjectName("muted")
-            value = QLabel("—")
+            value = AnimatedLabel("—")
             value.setObjectName("statValue")
             card_layout.addWidget(label)
             card_layout.addWidget(value)

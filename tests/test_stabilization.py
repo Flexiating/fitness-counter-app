@@ -64,7 +64,7 @@ def test_stop_is_non_blocking_and_clears_preview(monkeypatch) -> None:
     elapsed = monotonic() - started
 
     assert elapsed < 0.1
-    assert tr("camera.stopped") in window.camera_view.text()
+    assert tr("ui.camera_off") in window.camera_view.text()
     assert window.camera_view.pixmap().isNull()
     finish_worker(window)
     assert window.worker is None
@@ -121,7 +121,7 @@ def test_stopped_camera_rejects_queued_stale_frames() -> None:
     widget.show_stopped()
     widget.set_frame(image)
     assert widget.pixmap().isNull()
-    assert tr("camera.stopped") in widget.text()
+    assert tr("ui.camera_off") in widget.text()
 
 
 def test_ui_import_does_not_eagerly_import_native_vision_libraries() -> None:

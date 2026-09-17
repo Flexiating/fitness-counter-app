@@ -1,4 +1,6 @@
 {
+  "ui.day": "{value} day",
+  "ui.weekly_activity": "Last 7 days", "ui.personal_best": "Best session", "ui.streak": "Current streak", "ui.days": "{value} days", "ui.camera_off": "Camera is off",
   "app.title": "AI Workout Tracker",
   "tab.workout": "Workout", "tab.history": "History", "tab.guide": "Guide", "tab.settings": "Settings",
   "exercise.push_up": "Push-up", "exercise.crunch": "Crunch", "exercise.label": "EXERCISE",

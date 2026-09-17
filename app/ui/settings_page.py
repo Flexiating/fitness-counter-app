@@ -3,11 +3,14 @@ from __future__ import annotations
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDoubleSpinBox, QFormLayout, QFrame, QHBoxLayout,
-    QLabel, QPushButton, QSpinBox, QVBoxLayout, QWidget,
+    QLabel, QSpinBox, QVBoxLayout, QWidget,
 )
 
 from app.config.settings import SETTINGS, SettingsStore
 from app.ui.translations import tr
+from app.ui.design import Button as QPushButton
+from app.ui.design import HoverFrame as QFrame
+from app.ui.design import Switch as QCheckBox
 
 
 class SettingsPage(QWidget):
@@ -19,6 +22,7 @@ class SettingsPage(QWidget):
 
     def __init__(self, store: SettingsStore, parent=None) -> None:
         super().__init__(parent)
+        self.setObjectName("settingsPage")
         self.store = store
         root = QVBoxLayout(self)
         self.title = QLabel()
@@ -32,7 +36,8 @@ class SettingsPage(QWidget):
 
         self.appearance, appearance = self._section()
         self.dark_mode = QCheckBox()
-        self.dark_mode.setChecked(SETTINGS.dark_mode)
+        self.dark_mode.setChecked(True)
+        self.dark_mode.setEnabled(False)
         self.language = QComboBox()
         self.language.addItem("English", "en")
         self.language.addItem("Tiếng Việt", "vi")
@@ -67,7 +72,7 @@ class SettingsPage(QWidget):
         right.addWidget(self.ai)
 
         self.history, history = self._section()
-        buttons = QHBoxLayout()
+        buttons = QVBoxLayout()
         self.export_csv, self.export_json, self.delete_history = QPushButton(), QPushButton(), QPushButton()
         buttons.addWidget(self.export_csv); buttons.addWidget(self.export_json); buttons.addWidget(self.delete_history)
         history.addRow(buttons)
@@ -75,8 +80,8 @@ class SettingsPage(QWidget):
 
         self.about, about = self._section()
         self.version_label, self.build_label = QLabel(), QLabel()
-        about.addRow(self.version_label, QLabel("1.0.0"))
-        about.addRow(self.build_label, QLabel("1"))
+        about.addRow(self.version_label, QLabel("2.1.1"))
+        about.addRow(self.build_label, QLabel("2"))
         right.addWidget(self.about)
         self.note = QLabel()
         self.note.setObjectName("muted")
@@ -101,6 +106,9 @@ class SettingsPage(QWidget):
         frame = QFrame()
         frame.setObjectName("card")
         form = QFormLayout(frame)
+        form.setContentsMargins(24, 22, 24, 22)
+        form.setVerticalSpacing(16)
+        form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
         heading = QLabel()
         heading.setObjectName("sectionLabel")
         form.addRow(heading)

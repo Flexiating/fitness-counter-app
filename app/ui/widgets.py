@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QLabel
+from app.ui.design import AnimatedLabel as QLabel
 
 
 def value_label(text: str, size: int = 18) -> QLabel:

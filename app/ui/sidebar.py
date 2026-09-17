@@ -5,12 +5,14 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QSpinBox,
     QVBoxLayout,
 )
 
 from app.ui.translations import tr, translate_exercise
+from app.ui.design import Button as QPushButton
+from app.ui.design import HoverFrame as QFrame
+from app.ui.design import Switch as QCheckBox
 
 
 class Sidebar(QFrame):
@@ -20,8 +22,8 @@ class Sidebar(QFrame):
         super().__init__()
         self.setObjectName("sidebarCard")
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(18, 18, 18, 18)
-        layout.setSpacing(9)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(6)
 
         self.exercise_heading = self._heading("")
         layout.addWidget(self.exercise_heading)
@@ -42,7 +44,8 @@ class Sidebar(QFrame):
         self.target_sets.valueChanged.connect(self._emit_goals)
 
         layout.addSpacing(8)
-        self.timer_heading = self._heading("")
+        self.timer_heading = QPushButton()
+        self.timer_heading.setCheckable(True)
         layout.addWidget(self.timer_heading)
         self.timer_enabled = QCheckBox()
         self.timer_enabled.setChecked(True)
@@ -62,6 +65,10 @@ class Sidebar(QFrame):
         self.timer_duration.currentIndexChanged.connect(self._duration_changed)
         self.apply_timer = QPushButton()
         layout.addWidget(self.apply_timer)
+        for widget in (self.timer_mode, self.timer_duration, self.apply_timer):
+            widget.hide()
+            self.timer_heading.toggled.connect(widget.setVisible)
+        self.timer_heading.toggled.connect(lambda opened: self.custom_duration.setVisible(opened and self.timer_duration.currentData() == -1))
 
         self.debug_mode = QCheckBox()
         layout.addWidget(self.debug_mode)
@@ -93,6 +100,10 @@ class Sidebar(QFrame):
         self.apply_timer.setText(tr("timer.apply")); self.debug_mode.setText(tr("debug.mode"))
         self.start.setText(tr("button.start_camera")); self.stop.setText(tr("button.stop_camera"))
         self.reset.setText(tr("button.reset")); self.pause.setText(tr("button.pause")); self.settings.setText(tr("button.settings"))
+        self.start.setToolTip(f"{tr('button.start_camera')} · C")
+        self.stop.setToolTip(f"{tr('button.stop_camera')} · C")
+        self.reset.setToolTip(f"{tr('button.reset')} · R")
+        self.pause.setToolTip(f"{tr('button.pause')} · Space")
 
     @staticmethod
     def _heading(text: str) -> QLabel:

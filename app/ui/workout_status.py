@@ -1,5 +1,7 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFrame, QGridLayout, QLabel, QProgressBar, QVBoxLayout
+from PySide6.QtWidgets import QFrame, QGridLayout, QLabel, QVBoxLayout
+from app.ui.design import ProgressBar as QProgressBar, ProgressRing
+from app.ui.design import HoverFrame as QFrame
 from app.ui.translations import tr
 
 
@@ -35,6 +37,8 @@ class WorkoutStatusPanel(QFrame):
         goal_layout.addWidget(self.goal_value)
         goal_layout.addWidget(self.goal_progress)
         goal_layout.addWidget(self.current_set)
+        self.ring = ProgressRing()
+        goal_layout.addWidget(self.ring, alignment=Qt.AlignmentFlag.AlignRight)
 
         self.coach_card, coach_layout, self.coach_title = self._card()
         self.coach = QLabel()
@@ -43,12 +47,11 @@ class WorkoutStatusPanel(QFrame):
         self.coach.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         coach_layout.addWidget(self.coach, 1)
 
-        layout.addWidget(self.form_card, 0, 0)
-        layout.addWidget(self.goal_card, 0, 1)
-        layout.addWidget(self.coach_card, 0, 2)
-        layout.setColumnStretch(0, 1)
-        layout.setColumnStretch(1, 1)
-        layout.setColumnStretch(2, 2)
+        layout.addWidget(self.coach_card, 0, 0)
+        layout.addWidget(self.goal_card, 1, 0)
+        layout.addWidget(self.form_card, 2, 0)
+        layout.setRowStretch(0, 1)
+        layout.setVerticalSpacing(14)
         self.retranslate()
 
     @staticmethod
@@ -56,6 +59,8 @@ class WorkoutStatusPanel(QFrame):
         card = QFrame()
         card.setObjectName("miniCard")
         layout = QVBoxLayout(card)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(12)
         title_label = QLabel()
         title_label.setObjectName("sectionLabel")
         layout.addWidget(title_label)
@@ -81,6 +86,7 @@ class WorkoutStatusPanel(QFrame):
         self.goal_progress.setValue(set_reps)
         self.goal_value.setText(tr("goal.progress", current=set_reps, target=target_reps))
         self.current_set.setText(tr("goal.set", current=current_set, target=target_sets))
+        self.ring.set_progress(completed / total_target)
 
     def set_coach(self, message: str, color: str = "#cbd5e1") -> None:
         self.coach.setText(message)

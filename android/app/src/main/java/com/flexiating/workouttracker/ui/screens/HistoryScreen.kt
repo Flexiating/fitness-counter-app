@@ -1,13 +1,22 @@
 package com.flexiating.workouttracker.ui.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.DeleteSweep
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.CheckCircle
+import com.flexiating.workouttracker.ui.theme.Success
+import com.flexiating.workouttracker.ui.components.HistoryInsights
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,8 +38,8 @@ import java.util.*
 @Composable
 fun HistoryScreen(onSessionClick: (Long) -> Unit, viewModel: HistoryViewModel = hiltViewModel()) {
     val sessions by viewModel.sessions.collectAsState()
-    var query by remember { mutableStateOf("") }
-    var exercise by remember { mutableStateOf<ExerciseType?>(null) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var exercise by rememberSaveable { mutableStateOf<ExerciseType?>(null) }
     var filterOpen by remember { mutableStateOf(false) }
     var confirmClear by remember { mutableStateOf(false) }
     val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.US) }
@@ -56,6 +65,7 @@ fun HistoryScreen(onSessionClick: (Long) -> Unit, viewModel: HistoryViewModel = 
         OutlinedTextField(
             value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(),
             label = { Text(stringResource(R.string.search_date)) }, singleLine = true,
+            leadingIcon = { Icon(Icons.Rounded.Search, null) },
         )
         Spacer(Modifier.height(8.dp))
         Box {
@@ -71,20 +81,27 @@ fun HistoryScreen(onSessionClick: (Long) -> Unit, viewModel: HistoryViewModel = 
         }
         Spacer(Modifier.height(12.dp))
         if (filtered.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                Icon(Icons.Rounded.History, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.height(20.dp))
                 Text(stringResource(R.string.history_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-        } else LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        } else LazyVerticalGrid(columns = GridCells.Adaptive(340.dp), verticalArrangement = Arrangement.spacedBy(14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            item(span = { GridItemSpan(maxLineSpan) }) { HistoryInsights(sessions) }
             items(filtered, key = { it.id }) { session ->
-                ElevatedCard(Modifier.fillMaxWidth().clickable { onSessionClick(session.id) }) {
-                    Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column {
+                ElevatedCard(onClick = { onSessionClick(session.id) }, modifier = Modifier.fillMaxWidth().animateItem()) {
+                    Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(exerciseName(ExerciseType.valueOf(session.exercise)), fontWeight = FontWeight.Bold)
-                            Text(DateFormat.getDateTimeInstance().format(Date(session.dateEpochMs)), style = MaterialTheme.typography.bodySmall)
+                            Text(DateFormat.getDateTimeInstance().format(Date(session.dateEpochMs)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(pluralStringResource(R.plurals.reps_short, session.reps, session.reps), fontWeight = FontWeight.Bold)
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(pluralStringResource(R.plurals.reps_short, session.reps, session.reps), style = MaterialTheme.typography.headlineSmall)
                             Text(stringResource(R.string.duration_form, formatDuration(session.durationMs), session.averageFormScore.toInt()), style = MaterialTheme.typography.bodySmall)
+                        }
+                        if (session.targetReached) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(Icons.Rounded.CheckCircle, null, tint = Success, modifier = Modifier.size(18.dp))
+                            Text(stringResource(R.string.target_reached), color = Success, style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 }
@@ -102,7 +119,7 @@ fun SessionDetailScreen(sessionId: Long, onBack: () -> Unit, viewModel: HistoryV
         onConfirm = { viewModel.delete(sessionId); confirmDelete = false; onBack() },
         onDismiss = { confirmDelete = false },
     )
-    Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) }
             Text(stringResource(R.string.session_details), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))

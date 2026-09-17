@@ -22,21 +22,26 @@ import java.util.Locale
 
 @Composable
 fun WorkoutMetricsOverlay(state: WorkoutUiState, modifier: Modifier = Modifier) {
-    Box(modifier) {
-        Column(Modifier.align(Alignment.TopStart).padding(12.dp).background(Color.Black.copy(alpha = .55f), RoundedCornerShape(12.dp)).padding(12.dp)) {
-            Text(exerciseName(state.exercise), fontWeight = FontWeight.Bold)
-            Text(stringResource(R.string.state_value, phaseName(state.result.phase)), fontSize = 13.sp)
-            Text(stringResource(R.string.reps_value, state.result.count), fontSize = 26.sp, fontWeight = FontWeight.Black)
+    BoxWithConstraints(modifier) {
+        val compact = maxHeight < 280.dp
+        Column(Modifier.align(Alignment.TopStart).padding(if (compact) 8.dp else 12.dp).background(Color.Black.copy(alpha = .55f), RoundedCornerShape(12.dp)).padding(if (compact) 8.dp else 12.dp)) {
+            if (!compact) {
+                Text(exerciseName(state.exercise), fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.state_value, phaseName(state.result.phase)), fontSize = 13.sp)
+                RepCounter(state.result.count)
+            } else Text(stringResource(R.string.reps_value, state.result.count), fontSize = 24.sp, fontWeight = FontWeight.Bold)
         }
-        Column(Modifier.align(Alignment.TopEnd).padding(12.dp).background(Color.Black.copy(alpha = .55f), RoundedCornerShape(12.dp)).padding(12.dp), horizontalAlignment = Alignment.End) {
+        Column(Modifier.align(Alignment.TopEnd).padding(if (compact) 8.dp else 12.dp).background(Color.Black.copy(alpha = .55f), RoundedCornerShape(12.dp)).padding(if (compact) 8.dp else 12.dp), horizontalAlignment = Alignment.End) {
             if (state.settings.showFps) Text(String.format(Locale.US, "%.1f FPS", state.fps), fontSize = 13.sp)
             Text(stringResource(R.string.tracking_value, (state.result.trackingConfidence * 100).toInt()), fontSize = 13.sp)
             Text(stringResource(R.string.form_value, state.result.formScore), fontSize = 13.sp)
         }
         val seconds = state.elapsedMs / 1000
-        Text(String.format(Locale.US, "%02d:%02d", seconds / 60, seconds % 60),
-            modifier = Modifier.align(Alignment.BottomCenter).padding(14.dp).background(Color.Black.copy(alpha = .62f), RoundedCornerShape(20.dp)).padding(horizontal = 20.dp, vertical = 8.dp),
-            fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Row(Modifier.align(if (compact) Alignment.BottomStart else Alignment.BottomCenter).padding(start = if (compact) 8.dp else 0.dp, bottom = if (compact) 20.dp else 78.dp).background(Color.Black.copy(alpha = .75f), RoundedCornerShape(16.dp)).padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            if (!compact) GoalRing(state.result.count.toFloat() / state.settings.targetReps.coerceAtLeast(1))
+            Text(String.format(Locale.US, "%02d:%02d", seconds / 60, seconds % 60), fontSize = if (compact) 16.sp else 24.sp, fontWeight = FontWeight.SemiBold)
+        }
     }
 }
 

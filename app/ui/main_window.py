@@ -2,7 +2,7 @@ from datetime import datetime
 from threading import Event
 from time import monotonic, sleep
 from PySide6.QtCore import QThread, Signal, Slot, QTimer
-from PySide6.QtGui import QImage, QKeySequence, QShortcut
+from PySide6.QtGui import QImage, QKeySequence, QShortcut, QFont
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
@@ -13,6 +13,8 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QVBoxLayout,
     QWidget,
+    QScrollArea,
+    QAbstractSpinBox, QLineEdit, QComboBox,
 )
 
 from app.camera.camera import Camera
@@ -21,10 +23,10 @@ from app.exercises.exercise_manager import ExerciseManager
 from app.pose.pose_detector import PoseDetector
 from app.processing.motion_processor import MotionProcessor
 from app.config.settings import SETTINGS, SettingsStore
-from app.pose.angles import JOINT_ANGLE_TRIPLES
 from app.pose.pose_landmarks import LandmarkName
 from app.ui.camera_widget import CameraWidget
 from app.ui.widgets import value_label
+from app.ui.design import TabBar, PageTransition
 from app.ui.header import Header
 from app.ui.sidebar import Sidebar
 from app.ui.stats_panel import StatsPanel
@@ -227,20 +229,8 @@ class CameraWorker(QThread):
         for point in landmarks.values():
             if point.visibility > 0.4:
                 cv2.circle(frame, (int(point.x * width), int(point.y * height)), 4, skeleton_color, -1)
-        confidence = sum(point.visibility for point in landmarks.values()) / len(landmarks) if landmarks else 0.0
-        lines = [
-            f"{tr('person.label')}: {tr('person.detected') if person_detected else tr('person.not_detected')}",
-            f"FPS: {fps:.1f}",
-            f"{tr('settings.confidence')}: {confidence:.0%}",
-        ]
-        for index, text in enumerate(lines):
-            cv2.putText(frame, text, (16, 30 + index * 24), cv2.FONT_HERSHEY_SIMPLEX, 0.58, (255, 255, 255), 2)
-        for name, value in angles.items():
-            if name not in JOINT_ANGLE_TRIPLES:
-                continue
-            _, joint, _ = JOINT_ANGLE_TRIPLES[name]
-            point = landmarks[joint]
-            cv2.putText(frame, f"{value:.0f}°", (int(point.x * width) + 6, int(point.y * height) - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (253, 224, 71), 2)
+        # Readable, localized telemetry is rendered by CameraWidget. Keep the
+        # skeleton here, without burning technical labels into camera pixels.
 
     @staticmethod
     def _skeleton_color(status: str, person_detected: bool) -> tuple[int, int, int]:
@@ -268,6 +258,8 @@ class CameraWorker(QThread):
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
+        QApplication.instance().setStyle("Fusion")
+        QApplication.instance().setFont(QFont("Arial", 10))
         self.settings_store = SettingsStore()
         self.settings_store.load()
         initialize_localization(SETTINGS.language)
@@ -304,9 +296,10 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(tr("app.title"))
         self.setMinimumSize(1100, 700)
         self.resize(1440, 900)
-        self.setStyleSheet(load_theme("dark" if SETTINGS.dark_mode else "light"))
+        self.setStyleSheet(load_theme("dark"))
         self._build()
         self._install_shortcuts()
+        QApplication.instance().focusChanged.connect(self._shortcut_focus_changed)
         localization().language_changed.connect(self._retranslate_ui)
 
     def _build(self) -> None:
@@ -318,6 +311,8 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.header)
 
         self.tabs = QTabWidget()
+        self.tabs.setTabBar(TabBar())
+        self.tabs.setTabPosition(QTabWidget.TabPosition.South)
         self.tabs.setObjectName("mainTabs")
         layout.addWidget(self.tabs, 1)
 
@@ -345,11 +340,18 @@ class MainWindow(QMainWindow):
         self.sidebar.debug_mode.toggled.connect(self._toggle_debug)
         self.sidebar.goals_changed.connect(self._goals_changed)
         self.sidebar.settings.clicked.connect(lambda: self.tabs.setCurrentIndex(3))
-        body.addWidget(self.sidebar)
+        sidebar_scroll = QScrollArea()
+        sidebar_scroll.setWidgetResizable(True)
+        sidebar_scroll.setWidget(self.sidebar)
+        sidebar_scroll.setMinimumWidth(244)
+        sidebar_scroll.setMaximumWidth(284)
+        sidebar_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        body.addWidget(sidebar_scroll)
 
         center = QVBoxLayout()
         center.setSpacing(10)
         self.camera_view = CameraWidget()
+        self.camera_view.start_requested.connect(self.start)
         center.addWidget(self.camera_view, 1)
 
         status_bar = QFrame()
@@ -367,8 +369,14 @@ class MainWindow(QMainWindow):
         center.addWidget(status_bar)
 
         self.workout_status = WorkoutStatusPanel()
-        center.addWidget(self.workout_status)
         body.addLayout(center, 1)
+        self.workout_status.setMinimumWidth(220)
+        self.workout_status.setMaximumWidth(280)
+        self.workout_status.setMinimumHeight(540)
+        info_scroll = self._scroll_page(self.workout_status)
+        info_scroll.setMinimumWidth(228)
+        info_scroll.setMaximumWidth(288)
+        body.addWidget(info_scroll)
 
         self.debug_drawer = DebugPanel()
         self.debug_drawer.setMinimumWidth(230)
@@ -384,9 +392,9 @@ class MainWindow(QMainWindow):
         self.history_page = HistoryPage(self.history_repository)
         self.tabs.addTab(self.history_page, "")
         self.posture_guide = PostureGuide()
-        self.tabs.addTab(self.posture_guide, "")
+        self.tabs.addTab(self._scroll_page(self.posture_guide), "")
         self.settings_page = SettingsPage(self.settings_store)
-        self.tabs.addTab(self.settings_page, "")
+        self.tabs.addTab(self._scroll_page(self.settings_page), "")
         self.settings_page.language_changed.connect(localization().set_language)
         self.settings_page.theme_changed.connect(self._apply_theme)
         self.settings_page.export_csv_requested.connect(lambda: self.history_page.export("csv"))
@@ -403,6 +411,22 @@ class MainWindow(QMainWindow):
         self._update_dashboard()
         self.setCentralWidget(root)
         self._retranslate_ui()
+        self._page_transition = PageTransition(self.tabs)
+
+    @staticmethod
+    def _scroll_page(page: QWidget) -> QScrollArea:
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setWidget(page)
+        page.setAutoFillBackground(False)
+        scroll.viewport().setAutoFillBackground(False)
+        return scroll
+
+    def _shortcut_focus_changed(self, _old, current) -> None:
+        editing = isinstance(current, (QLineEdit, QAbstractSpinBox, QComboBox))
+        for shortcut in self._shortcuts:
+            shortcut.setEnabled(not editing)
 
     @Slot()
     def start(self) -> None:
@@ -593,6 +617,8 @@ class MainWindow(QMainWindow):
             self.workout_status.set_coach(tr("coach.crunch_ready"), "#22C55E")
 
     def _update_camera_hud(self) -> None:
+        target = self.sidebar.target_reps.value() * self.sidebar.target_sets.value()
+        self.camera_view.progress_ring.set_progress(self.metrics.repetitions / max(1, target))
         self.camera_view.set_hud(
             translate_exercise(self.manager.selected.name),
             translate_state(self._last_state),
@@ -753,6 +779,7 @@ class MainWindow(QMainWindow):
     @Slot(int, int)
     def _goals_changed(self, target_reps: int, target_sets: int) -> None:
         self.workout_status.update_goal(self.metrics.repetitions, target_reps, target_sets)
+        self._update_camera_hud()
 
     def _begin_countdown(self) -> None:
         if self._countdown_started or self._camera_stopping or self.worker is None:
@@ -812,21 +839,23 @@ class MainWindow(QMainWindow):
         self.workout_status.update_quality(score, self._tracking, grade, color)
         self.angle_debug.setText(tr("debug.angles_empty"))
         self.exercise_debug.setText(tr("debug.exercise_empty"))
+        self.workout_status.update_goal(self.metrics.repetitions, self.sidebar.target_reps.value(), self.sidebar.target_sets.value())
         self._update_camera_hud(); self._update_dashboard()
 
     @Slot(bool)
     def _apply_theme(self, dark: bool) -> None:
-        self.setStyleSheet(load_theme("dark" if dark else "light"))
+        self.setStyleSheet(load_theme("dark"))
 
     def _install_shortcuts(self) -> None:
         self._shortcuts = []
         for sequence, callback in (
-            ("Space", self._toggle_camera),
+            ("Space", self._toggle_pause),
             ("R", self.reset),
-            ("P", self._toggle_pause),
-            ("Escape", self.close),
+            ("C", self._toggle_camera),
+            ("F", lambda: self.showNormal() if self.isFullScreen() else self.showFullScreen()),
         ):
             shortcut = QShortcut(QKeySequence(sequence), self)
+            shortcut.setAutoRepeat(False)
             shortcut.activated.connect(callback)
             self._shortcuts.append(shortcut)
 

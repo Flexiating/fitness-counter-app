@@ -23,7 +23,7 @@ def test_camera_hud_countdown_and_stopped_state() -> None:
     assert widget.pixmap().isNull()
     assert not widget.hud_info.isVisible()
     assert not widget.hud_timer.isVisible()
-    assert tr("camera.stopped") in widget.text()
+    assert tr("ui.camera_off") in widget.text()
 
 
 def test_live_workout_metrics_tracks_speed_and_quality() -> None:

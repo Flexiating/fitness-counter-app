@@ -20,7 +20,13 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     LazyColumn(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item { Text(stringResource(R.string.settings), style = MaterialTheme.typography.headlineMedium); Spacer(Modifier.height(10.dp)) }
         item { SectionTitle(R.string.appearance) }
-        item { SettingSwitch(R.string.dark_mode, R.string.dark_mode_description, settings.darkMode) { viewModel.update { s -> s.copy(darkMode = it) } } }
+        item { ElevatedCard(Modifier.fillMaxWidth()) { Row(Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.dark_mode))
+                Text(stringResource(R.string.dark_mode_description), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Switch(checked = true, onCheckedChange = null)
+        } } }
         item { LanguageSetting(settings.language) { value -> viewModel.update { it.copy(language = value) } } }
         item { SectionTitle(R.string.camera) }
         item { SettingSwitch(R.string.front_camera, R.string.front_camera_description, settings.useFrontCamera) { viewModel.update { s -> s.copy(useFrontCamera = it) } } }
@@ -51,7 +57,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
 @Composable private fun SettingSwitch(@StringRes title: Int, @StringRes description: Int, checked: Boolean, onChange: (Boolean) -> Unit) {
     ElevatedCard(Modifier.fillMaxWidth()) { Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) { Text(stringResource(title)); Text(stringResource(description), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        Switch(checked, onChange)
+        Switch(checked, onChange, modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp))
     } }
 }
 

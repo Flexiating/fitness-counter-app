@@ -30,6 +30,9 @@ class Header(QFrame):
         self.fps = self._metric(layout, "", "— FPS")
         self.workout_timer = self._metric(layout, "", "00:00")
         self.clock = self._metric(layout, "", "--:--")
+        # Technical telemetry remains available in the camera HUD / debug drawer.
+        for label in (self.model, self.fps, self.metric_headings[1], self.metric_headings[2]):
+            label.hide()
         self.meta = QLabel()
         self.meta.hide()
 
@@ -78,7 +81,7 @@ class Header(QFrame):
         self.meta.setText(f"{camera_status} • {model_status} • {datetime.now():%H:%M}")
 
     def retranslate(self) -> None:
-        self.title.setText(tr("app.title").upper())
+        self.title.setText(tr("app.title"))
         headings = ("camera.label", "model.label", "performance.label", "time.label", "now.label")
         for label, key in zip(self.metric_headings, headings):
             label.setText(tr(key))

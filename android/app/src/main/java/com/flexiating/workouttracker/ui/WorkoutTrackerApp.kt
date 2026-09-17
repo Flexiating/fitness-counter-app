@@ -11,6 +11,11 @@ import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.*
 import androidx.compose.foundation.layout.padding
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -23,6 +28,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.flexiating.workouttracker.R
 import com.flexiating.workouttracker.ui.screens.*
+import com.flexiating.workouttracker.ui.components.ReadingPage
 import com.flexiating.workouttracker.ui.theme.WorkoutTrackerTheme
 import com.flexiating.workouttracker.viewmodel.SettingsViewModel
 import java.util.Locale
@@ -59,7 +65,7 @@ fun WorkoutTrackerApp(settingsViewModel: SettingsViewModel = hiltViewModel()) {
         LocalContext provides localizedResourcesContext,
         LocalConfiguration provides localizedConfiguration,
     ) {
-        WorkoutTrackerTheme(settings.darkMode) {
+        WorkoutTrackerTheme {
             val nav = rememberNavController()
             val items = listOf(
                 Destination("workout", R.string.workout, Icons.Rounded.FitnessCenter),
@@ -80,7 +86,12 @@ fun WorkoutTrackerApp(settingsViewModel: SettingsViewModel = hiltViewModel()) {
                     }
                 }
             }) { padding ->
-                NavHost(navController = nav, startDestination = "workout", modifier = Modifier.padding(padding)) {
+                NavHost(navController = nav, startDestination = "workout", modifier = Modifier.padding(padding),
+                    enterTransition = { fadeIn(tween(200)) + slideInHorizontally(tween(200)) { it / 24 } },
+                    exitTransition = { fadeOut(tween(150)) + slideOutHorizontally(tween(200)) { -it / 24 } },
+                    popEnterTransition = { fadeIn(tween(200)) },
+                    popExitTransition = { fadeOut(tween(150)) },
+                ) {
                     composable("workout") { WorkoutScreen() }
                     composable("history") { HistoryScreen(onSessionClick = { nav.navigate("history/$it") }) }
                     composable("history/{sessionId}") { entry ->
@@ -89,8 +100,8 @@ fun WorkoutTrackerApp(settingsViewModel: SettingsViewModel = hiltViewModel()) {
                             onBack = { nav.popBackStack() },
                         )
                     }
-                    composable("guide") { GuideScreen() }
-                    composable("settings") { SettingsScreen(settingsViewModel) }
+                    composable("guide") { ReadingPage { GuideScreen() } }
+                    composable("settings") { ReadingPage { SettingsScreen(settingsViewModel) } }
                 }
             }
         }
